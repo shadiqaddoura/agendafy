@@ -218,11 +218,11 @@ function SortableTodoItem({
       ) : (
         <span
           onDoubleClick={() => !todo.completed && onStartEdit(todo)}
+          className={todo.completed ? 'completed-text' : undefined}
           style={{
             flex: 1,
             fontSize: 22,
             color: todo.completed ? '#bbb' : '#2c3e50',
-            textDecoration: todo.completed ? 'line-through' : 'none',
             cursor: todo.completed ? 'default' : 'text',
             wordBreak: 'break-word',
             transition: 'color 0.2s',
