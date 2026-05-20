@@ -1,6 +1,23 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -72,6 +89,202 @@ function groupByDate(todos: Todo[]): [string, Todo[]][] {
   return entries
 }
 
+type SortableTodoItemProps = {
+  todo: Todo
+  editingId: string | null
+  editText: string
+  activeTagFilter: string | null
+  isDragOverlay?: boolean
+  onToggle: (id: string) => void
+  onDelete: (id: string) => void
+  onStartEdit: (todo: Todo) => void
+  onSaveEdit: (id: string) => void
+  onEditTextChange: (text: string) => void
+  onCancelEdit: () => void
+  onTagFilterToggle: (tag: string) => void
+}
+
+function SortableTodoItem({
+  todo,
+  editingId,
+  editText,
+  activeTagFilter,
+  isDragOverlay = false,
+  onToggle,
+  onDelete,
+  onStartEdit,
+  onSaveEdit,
+  onEditTextChange,
+  onCancelEdit,
+  onTagFilterToggle,
+}: SortableTodoItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.3 : 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        minHeight: 34,
+        padding: '3px 6px',
+        borderRadius: 6,
+        background: isDragOverlay ? 'rgba(61,90,128,0.08)' : 'transparent',
+        boxShadow: isDragOverlay ? '0 4px 16px rgba(0,0,0,0.12)' : 'none',
+        cursor: 'default',
+      }}
+      onMouseEnter={e => { if (!isDragOverlay) e.currentTarget.style.background = 'rgba(61,90,128,0.06)' }}
+      onMouseLeave={e => { if (!isDragOverlay) e.currentTarget.style.background = 'transparent' }}
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        style={{
+          cursor: isDragging ? 'grabbing' : 'grab',
+          color: '#ccc',
+          fontSize: 16,
+          flexShrink: 0,
+          lineHeight: 1,
+          padding: '0 2px',
+          userSelect: 'none',
+          touchAction: 'none',
+        }}
+        title="Drag to reorder"
+      >
+        ⠿
+      </div>
+
+      {/* Priority dot */}
+      <div
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: '50%',
+          background: PRIORITY_COLORS[todo.priority],
+          flexShrink: 0,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        }}
+      />
+
+      {/* Checkbox */}
+      <div
+        onClick={() => onToggle(todo.id)}
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 4,
+          border: todo.completed ? '2px solid #aaa' : '2px solid #3d5a80',
+          background: todo.completed ? '#aaa' : 'transparent',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          transition: 'all 0.2s',
+          fontSize: 14,
+          color: '#fff',
+        }}
+      >
+        {todo.completed ? '✓' : ''}
+      </div>
+
+      {/* Text / Edit */}
+      {editingId === todo.id ? (
+        <input
+          autoFocus
+          value={editText}
+          onChange={e => onEditTextChange(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') onSaveEdit(todo.id)
+            if (e.key === 'Escape') onCancelEdit()
+          }}
+          onBlur={() => onSaveEdit(todo.id)}
+          style={{
+            flex: 1,
+            border: 'none',
+            borderBottom: '2px solid #3d5a80',
+            outline: 'none',
+            background: 'transparent',
+            fontSize: 22,
+            fontFamily: "'Caveat', cursive",
+            color: '#2c3e50',
+          }}
+        />
+      ) : (
+        <span
+          onDoubleClick={() => !todo.completed && onStartEdit(todo)}
+          style={{
+            flex: 1,
+            fontSize: 22,
+            color: todo.completed ? '#bbb' : '#2c3e50',
+            textDecoration: todo.completed ? 'line-through' : 'none',
+            cursor: todo.completed ? 'default' : 'text',
+            wordBreak: 'break-word',
+            transition: 'color 0.2s',
+          }}
+        >
+          {todo.text}
+        </span>
+      )}
+
+      {/* Tags */}
+      {todo.tags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
+          {todo.tags.map(tag => {
+            const { bg, text } = tagColor(tag)
+            return (
+              <span
+                key={tag}
+                onClick={() => onTagFilterToggle(tag)}
+                title={`Filter by #${tag}`}
+                style={{
+                  background: bg,
+                  color: text,
+                  borderRadius: 10,
+                  padding: '1px 7px',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  opacity: todo.completed ? 0.5 : 1,
+                  border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
+                  transition: 'border 0.15s',
+                }}
+              >
+                #{tag}
+              </span>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Delete */}
+      <button
+        onClick={() => onDelete(todo.id)}
+        title="Delete"
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: '#ccc',
+          fontSize: 20,
+          flexShrink: 0,
+          lineHeight: 1,
+          padding: '0 4px',
+          transition: 'color 0.15s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
 export default function NotebookTodo() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [inputText, setInputText] = useState('')
@@ -83,8 +296,28 @@ export default function NotebookTodo() {
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const tagInputRef = useRef<HTMLInputElement>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  )
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(event.active.id as string)
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null)
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setTodos(prev => {
+      const oldIdx = prev.findIndex(t => t.id === active.id)
+      const newIdx = prev.findIndex(t => t.id === over.id)
+      return arrayMove(prev, oldIdx, newIdx)
+    })
+  }
 
   useEffect(() => {
     try {
@@ -692,166 +925,82 @@ export default function NotebookTodo() {
               <div>No tasks tagged <strong>#{activeTagFilter}</strong></div>
             </div>
           ) : (
-            groups.map(([dateKey, groupTodos]) => (
-              <div key={dateKey} style={{ marginBottom: 28 }}>
-                {/* Section header */}
-                <div
-                  style={{
-                    fontSize: 17,
-                    fontWeight: 'bold',
-                    color: '#3d5a80',
-                    borderBottom: '2px solid #3d5a80',
-                    paddingBottom: 4,
-                    marginBottom: 8,
-                    letterSpacing: 1,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span>{formatSectionDate(dateKey)}</span>
-                  <span style={{ fontSize: 14, fontWeight: 'normal', color: '#aaa' }}>
-                    {groupTodos.filter(t => !t.completed).length} left
-                  </span>
-                </div>
-
-                {/* Todos */}
-                {groupTodos.map(todo => (
-                  <div
-                    key={todo.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      minHeight: 34,
-                      padding: '3px 6px',
-                      borderRadius: 6,
-                      transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(61,90,128,0.06)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={filteredTodos.map(t => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {groups.map(([dateKey, groupTodos]) => (
+                  <div key={dateKey} style={{ marginBottom: 28 }}>
                     <div
                       style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: PRIORITY_COLORS[todo.priority],
-                        flexShrink: 0,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                      }}
-                    />
-                    <div
-                      onClick={() => toggleTodo(todo.id)}
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: 4,
-                        border: todo.completed ? '2px solid #aaa' : '2px solid #3d5a80',
-                        background: todo.completed ? '#aaa' : 'transparent',
-                        cursor: 'pointer',
+                        fontSize: 17,
+                        fontWeight: 'bold',
+                        color: '#3d5a80',
+                        borderBottom: '2px solid #3d5a80',
+                        paddingBottom: 4,
+                        marginBottom: 8,
+                        letterSpacing: 1,
                         display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        transition: 'all 0.2s',
-                        fontSize: 14,
-                        color: '#fff',
                       }}
                     >
-                      {todo.completed ? '✓' : ''}
+                      <span>{formatSectionDate(dateKey)}</span>
+                      <span style={{ fontSize: 14, fontWeight: 'normal', color: '#aaa' }}>
+                        {groupTodos.filter(t => !t.completed).length} left
+                      </span>
                     </div>
 
-                    {editingId === todo.id ? (
-                      <input
-                        autoFocus
-                        value={editText}
-                        onChange={e => setEditText(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') saveEdit(todo.id)
-                          if (e.key === 'Escape') setEditingId(null)
-                        }}
-                        onBlur={() => saveEdit(todo.id)}
-                        style={{
-                          flex: 1,
-                          border: 'none',
-                          borderBottom: '2px solid #3d5a80',
-                          outline: 'none',
-                          background: 'transparent',
-                          fontSize: 22,
-                          fontFamily: "'Caveat', cursive",
-                          color: '#2c3e50',
-                        }}
+                    {groupTodos.map(todo => (
+                      <SortableTodoItem
+                        key={todo.id}
+                        todo={todo}
+                        editingId={editingId}
+                        editText={editText}
+                        activeTagFilter={activeTagFilter}
+                        onToggle={toggleTodo}
+                        onDelete={deleteTodo}
+                        onStartEdit={startEdit}
+                        onSaveEdit={saveEdit}
+                        onEditTextChange={setEditText}
+                        onCancelEdit={() => setEditingId(null)}
+                        onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
                       />
-                    ) : (
-                      <span
-                        onDoubleClick={() => !todo.completed && startEdit(todo)}
-                        style={{
-                          flex: 1,
-                          fontSize: 22,
-                          color: todo.completed ? '#bbb' : '#2c3e50',
-                          textDecoration: todo.completed ? 'line-through' : 'none',
-                          cursor: todo.completed ? 'default' : 'text',
-                          wordBreak: 'break-word',
-                          transition: 'color 0.2s',
-                        }}
-                      >
-                        {todo.text}
-                      </span>
-                    )}
-
-                    {/* Tags */}
-                    {todo.tags.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
-                        {todo.tags.map(tag => {
-                          const { bg, text } = tagColor(tag)
-                          return (
-                            <span
-                              key={tag}
-                              onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
-                              title={`Filter by #${tag}`}
-                              style={{
-                                background: bg,
-                                color: text,
-                                borderRadius: 10,
-                                padding: '1px 7px',
-                                fontSize: 13,
-                                cursor: 'pointer',
-                                opacity: todo.completed ? 0.5 : 1,
-                                border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
-                                transition: 'border 0.15s',
-                              }}
-                            >
-                              #{tag}
-                            </span>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => deleteTodo(todo.id)}
-                      title="Delete"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#ccc',
-                        fontSize: 20,
-                        flexShrink: 0,
-                        lineHeight: 1,
-                        padding: '0 4px',
-                        transition: 'color 0.15s',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
-                    >
-                      ×
-                    </button>
+                    ))}
                   </div>
                 ))}
-              </div>
-            ))
+              </SortableContext>
+
+              {/* Floating drag overlay */}
+              <DragOverlay>
+                {activeDragId ? (() => {
+                  const dragged = todos.find(t => t.id === activeDragId)
+                  if (!dragged) return null
+                  return (
+                    <SortableTodoItem
+                      todo={dragged}
+                      editingId={null}
+                      editText=""
+                      activeTagFilter={activeTagFilter}
+                      isDragOverlay
+                      onToggle={() => {}}
+                      onDelete={() => {}}
+                      onStartEdit={() => {}}
+                      onSaveEdit={() => {}}
+                      onEditTextChange={() => {}}
+                      onCancelEdit={() => {}}
+                      onTagFilterToggle={() => {}}
+                    />
+                  )
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           )}
         </div>
       </div>
