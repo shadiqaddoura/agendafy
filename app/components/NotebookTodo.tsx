@@ -226,7 +226,7 @@ function SortableTodoItem({
             wordBreak: 'break-word',
             transition: 'color 0.2s',
             textDecorationLine: todo.completed ? 'line-through' : 'none',
-            textDecorationColor: '#4db86a',
+            textDecorationColor: 'rgba(77, 184, 106, 0.5)',
             textDecorationThickness: 3,
           }}
         >
