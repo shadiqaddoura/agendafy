@@ -411,9 +411,13 @@ export default function NotebookTodo() {
 
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort()
   const pageTodos = todos.filter(t => (t.date || todayStr()) === currentPage)
-  const pageFilteredTodos = activeTagFilter
+  const pageFilteredTodos = (activeTagFilter
     ? pageTodos.filter(t => t.tags.includes(activeTagFilter))
     : pageTodos
+  ).slice().sort((a, b) => {
+    if (a.completed === b.completed) return 0
+    return a.completed ? 1 : -1
+  })
   const completedCount = todos.filter(t => t.completed).length
   const isToday = currentPage === todayStr()
 
