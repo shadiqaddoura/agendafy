@@ -409,36 +409,6 @@ export default function NotebookTodo() {
         fontFamily: "'Caveat', cursive",
       }}
     >
-      {/* Spiral rings strip */}
-      <div
-        style={{
-          background: '#293241',
-          display: 'flex',
-          justifyContent: 'space-around',
-          paddingLeft: 52,
-          paddingRight: 0,
-          flexShrink: 0,
-          zIndex: 3,
-          position: 'relative',
-        }}
-      >
-        {Array.from({ length: 24 }).map((_, i) => (
-          <div
-            key={i}
-            style={{
-              width: 22,
-              height: 18,
-              border: '3px solid #555',
-              borderRadius: '50%',
-              background: 'linear-gradient(180deg, #888 0%, #444 100%)',
-              position: 'relative',
-              top: 9,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
-              flexShrink: 0,
-            }}
-          />
-        ))}
-      </div>
 
       {/* Cover / Header */}
       <div
