@@ -519,10 +519,10 @@ export default function NotebookTodo() {
           }}
         />
 
-        {/* Left panel — add entry + stats + legend */}
+        {/* Left panel — stats + legend + tag filter */}
         <div
           style={{
-            width: 340,
+            width: 260,
             flexShrink: 0,
             overflowY: 'auto',
             padding: '20px 24px 32px 20px',
@@ -532,248 +532,6 @@ export default function NotebookTodo() {
             gap: 24,
           }}
         >
-          {/* New entry form */}
-          <div>
-            <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>
-              New entry
-            </div>
-            <div
-              style={{
-                background: 'rgba(255,255,255,0.65)',
-                border: '1.5px dashed #aac4e0',
-                borderRadius: 10,
-                padding: '12px 14px',
-              }}
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addTodo()}
-                placeholder="Write a task..."
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent',
-                  fontSize: 22,
-                  fontFamily: "'Caveat', cursive",
-                  color: '#2c3e50',
-                  marginBottom: 10,
-                }}
-              />
-              {/* Tag chips input */}
-              <div style={{ position: 'relative', marginBottom: 10 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 5,
-                    alignItems: 'center',
-                    minHeight: 28,
-                  }}
-                >
-                  {inputTags.map(tag => {
-                    const { bg, text } = tagColor(tag)
-                    return (
-                      <span
-                        key={tag}
-                        style={{
-                          background: bg,
-                          color: text,
-                          borderRadius: 12,
-                          padding: '2px 8px',
-                          fontSize: 14,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        #{tag}
-                        <button
-                          onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: text,
-                            fontSize: 14,
-                            lineHeight: 1,
-                            padding: 0,
-                            opacity: 0.7,
-                          }}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )
-                  })}
-                  <input
-                    ref={tagInputRef}
-                    type="text"
-                    value={inputTagText}
-                    onChange={e => {
-                      setInputTagText(e.target.value)
-                      setTagDropdownOpen(true)
-                    }}
-                    onFocus={() => setTagDropdownOpen(true)}
-                    onBlur={() => {
-                      // delay so onMouseDown on suggestions fires first
-                      setTimeout(() => {
-                        commitTag(inputTagText)
-                        setTagDropdownOpen(false)
-                      }, 150)
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
-                        e.preventDefault()
-                        commitTag(inputTagText)
-                        setTagDropdownOpen(false)
-                      } else if (e.key === 'Escape') {
-                        setTagDropdownOpen(false)
-                      } else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) {
-                        setInputTags(prev => prev.slice(0, -1))
-                      }
-                    }}
-                    placeholder={inputTags.length === 0 ? '# add tags...' : '# more...'}
-                    style={{
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      fontSize: 15,
-                      fontFamily: "'Caveat', cursive",
-                      color: '#888',
-                      minWidth: 80,
-                      flex: 1,
-                    }}
-                  />
-                </div>
-
-                {/* Existing tag suggestions dropdown */}
-                {tagDropdownOpen && (() => {
-                  const query = inputTagText.trim().toLowerCase()
-                  const suggestions = allTags.filter(
-                    t => !inputTags.includes(t) && (query === '' || t.includes(query))
-                  )
-                  if (suggestions.length === 0) return null
-                  return (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        background: '#fff',
-                        border: '1.5px solid #c4daf5',
-                        borderRadius: 8,
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                        zIndex: 10,
-                        marginTop: 4,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div style={{ padding: '4px 10px', fontSize: 11, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>
-                        Existing tags
-                      </div>
-                      {suggestions.map(tag => {
-                        const { bg, text } = tagColor(tag)
-                        return (
-                          <div
-                            key={tag}
-                            onMouseDown={e => {
-                              e.preventDefault()
-                              setInputTags(prev => [...new Set([...prev, tag])])
-                              setInputTagText('')
-                              setTagDropdownOpen(false)
-                              tagInputRef.current?.focus()
-                            }}
-                            style={{
-                              padding: '7px 12px',
-                              cursor: 'pointer',
-                              fontSize: 16,
-                              fontFamily: "'Caveat', cursive",
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              color: '#444',
-                              transition: 'background 0.1s',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                          >
-                            <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 14 }}>
-                              #{tag}
-                            </span>
-                            <span style={{ color: '#bbb', fontSize: 13 }}>
-                              {todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )
-                })()}
-              </div>
-
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <input
-                  type="date"
-                  value={inputDate}
-                  onChange={e => setInputDate(e.target.value)}
-                  style={{
-                    border: 'none',
-                    borderBottom: '1.5px solid #aac4e0',
-                    outline: 'none',
-                    background: 'transparent',
-                    fontSize: 15,
-                    fontFamily: "'Caveat', cursive",
-                    color: '#555',
-                    padding: '2px 4px',
-                    cursor: 'pointer',
-                  }}
-                />
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(['low', 'medium', 'high'] as Priority[]).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setInputPriority(p)}
-                      title={PRIORITY_LABELS[p]}
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        border: inputPriority === p ? '3px solid #333' : '2px solid transparent',
-                        background: PRIORITY_COLORS[p],
-                        cursor: 'pointer',
-                        transition: 'transform 0.15s',
-                        transform: inputPriority === p ? 'scale(1.2)' : 'scale(1)',
-                      }}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={addTodo}
-                  disabled={!inputText.trim()}
-                  style={{
-                    marginLeft: 'auto',
-                    background: inputText.trim() ? '#3d5a80' : '#ccc',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 20,
-                    padding: '6px 20px',
-                    fontSize: 18,
-                    fontFamily: "'Caveat', cursive",
-                    cursor: inputText.trim() ? 'pointer' : 'not-allowed',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  + Add
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Stats */}
           <div
             style={{
@@ -968,6 +726,154 @@ export default function NotebookTodo() {
             </button>
           </div>
 
+          {/* New entry form — inline, looks like a notebook line */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: '12px 32px 12px 28px',
+              borderBottom: '1.5px solid #c4daf5',
+              background: 'rgba(255,255,255,0.5)',
+            }}
+          >
+            {/* Row 1: priority + text */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Priority dot — click to cycle */}
+              <button
+                onClick={() => {
+                  const order: Priority[] = ['low', 'medium', 'high']
+                  setInputPriority(p => order[(order.indexOf(p) + 1) % order.length])
+                }}
+                title={`Priority: ${PRIORITY_LABELS[inputPriority]}`}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: PRIORITY_COLORS[inputPriority],
+                  border: '2px solid rgba(0,0,0,0.15)',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  transition: 'transform 0.15s',
+                }}
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addTodo()}
+                placeholder="Write a task..."
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  outline: 'none',
+                  background: 'transparent',
+                  fontSize: 22,
+                  fontFamily: "'Caveat', cursive",
+                  color: '#2c3e50',
+                }}
+              />
+            </div>
+
+            {/* Row 2: tags + date + add button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 28, flexWrap: 'wrap' }}>
+              {/* Tag chips */}
+              {inputTags.map(tag => {
+                const { bg, text } = tagColor(tag)
+                return (
+                  <span
+                    key={tag}
+                    style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}
+                  >
+                    #{tag}
+                    <button
+                      onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}
+                    >×</button>
+                  </span>
+                )
+              })}
+
+              {/* Tag input with dropdown */}
+              <div style={{ position: 'relative' }}>
+                <input
+                  ref={tagInputRef}
+                  type="text"
+                  value={inputTagText}
+                  onChange={e => { setInputTagText(e.target.value); setTagDropdownOpen(true) }}
+                  onFocus={() => setTagDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => { commitTag(inputTagText); setTagDropdownOpen(false) }, 150)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+                      e.preventDefault(); commitTag(inputTagText); setTagDropdownOpen(false)
+                    } else if (e.key === 'Escape') {
+                      setTagDropdownOpen(false)
+                    } else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) {
+                      setInputTags(prev => prev.slice(0, -1))
+                    }
+                  }}
+                  placeholder="# tag..."
+                  style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#888', width: 70 }}
+                />
+                {tagDropdownOpen && (() => {
+                  const query = inputTagText.trim().toLowerCase()
+                  const suggestions = allTags.filter(t => !inputTags.includes(t) && (query === '' || t.includes(query)))
+                  if (suggestions.length === 0) return null
+                  return (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1.5px solid #c4daf5', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
+                      <div style={{ padding: '4px 10px', fontSize: 11, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>Existing tags</div>
+                      {suggestions.map(tag => {
+                        const { bg, text } = tagColor(tag)
+                        return (
+                          <div
+                            key={tag}
+                            onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }}
+                            style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 16, fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 8, color: '#444' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 14 }}>#{tag}</span>
+                            <span style={{ color: '#bbb', fontSize: 13 }}>{todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Date */}
+              <input
+                type="date"
+                value={inputDate}
+                onChange={e => setInputDate(e.target.value)}
+                style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer' }}
+              />
+
+              {/* Priority dots */}
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                {(['low', 'medium', 'high'] as Priority[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setInputPriority(p)}
+                    title={PRIORITY_LABELS[p]}
+                    style={{ width: 16, height: 16, borderRadius: '50%', border: inputPriority === p ? '2.5px solid #333' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: inputPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }}
+                  />
+                ))}
+              </div>
+
+              {/* Add button */}
+              <button
+                onClick={addTodo}
+                disabled={!inputText.trim()}
+                style={{ marginLeft: 'auto', background: inputText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 17, fontFamily: "'Caveat', cursive", cursor: inputText.trim() ? 'pointer' : 'not-allowed', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                + Add
+              </button>
+            </div>
+          </div>
+
           {/* Todo list for this page */}
           <div style={{ padding: '20px 32px 32px 28px', flex: 1 }}>
             {pageFilteredTodos.length === 0 ? (
@@ -980,7 +886,7 @@ export default function NotebookTodo() {
                 <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
                   <div style={{ fontSize: 56 }}>📓</div>
                   <div>{isToday ? 'Nothing planned for today.' : `Nothing planned for ${pageLabel(currentPage)}.`}</div>
-                  <div style={{ fontSize: 17 }}>Add a task on the left!</div>
+                  <div style={{ fontSize: 17 }}>Write a task in the line above!</div>
                 </div>
               )
             ) : (
