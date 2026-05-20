@@ -218,7 +218,6 @@ function SortableTodoItem({
       ) : (
         <span
           onDoubleClick={() => !todo.completed && onStartEdit(todo)}
-          className={todo.completed ? 'completed-text' : undefined}
           style={{
             flex: 1,
             fontSize: 22,
@@ -226,9 +225,29 @@ function SortableTodoItem({
             cursor: todo.completed ? 'default' : 'text',
             wordBreak: 'break-word',
             transition: 'color 0.2s',
+            position: 'relative',
+            display: 'inline-block',
           }}
         >
           {todo.text}
+          {todo.completed && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: '52%',
+                height: 2.5,
+                background: '#4db86a',
+                borderRadius: '50% 50% 50% 50% / 80% 80% 20% 20%',
+                transform: 'translateY(-50%) rotate(-1.5deg)',
+                pointerEvents: 'none',
+                opacity: 0.85,
+                display: 'block',
+              }}
+            />
+          )}
         </span>
       )}
 
