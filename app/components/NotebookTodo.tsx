@@ -270,7 +270,7 @@ function SortableTodoItem({
                   color: text,
                   borderRadius: 10,
                   padding: '1px 7px',
-                  fontSize: 13,
+                  fontSize: 15,
                   cursor: 'pointer',
                   opacity: todo.completed ? 0.5 : 1,
                   border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
@@ -325,7 +325,7 @@ function SortableTodoItem({
         {editTags.map(tag => {
           const { bg, text } = tagColor(tag)
           return (
-            <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
               #{tag}
               <button onMouseDown={e => { e.preventDefault(); onEditTagsChange(editTags.filter(t => t !== tag)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
             </span>
@@ -1035,7 +1035,7 @@ export default function NotebookTodo() {
                   {inputTags.map(tag => {
                     const { bg, text } = tagColor(tag)
                     return (
-                      <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
                         #{tag}
                         <button onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
                       </span>
