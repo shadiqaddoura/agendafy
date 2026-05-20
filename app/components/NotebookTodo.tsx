@@ -178,9 +178,9 @@ function SortableTodoItem({
         style={{
           width: 22,
           height: 22,
-          borderRadius: 4,
-          border: todo.completed ? '2px solid #aaa' : '2px solid #3d5a80',
-          background: todo.completed ? '#aaa' : 'transparent',
+          borderRadius: '50%',
+          border: todo.completed ? '2px solid #4db86a' : '2px solid #4db86a',
+          background: todo.completed ? '#4db86a' : 'transparent',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
