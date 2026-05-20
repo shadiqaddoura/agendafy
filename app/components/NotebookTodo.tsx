@@ -227,7 +227,7 @@ function SortableTodoItem({
             transition: 'color 0.2s',
             textDecoration: todo.completed ? 'line-through' : 'none',
             textDecorationColor: '#4db86a',
-            textDecorationThickness: 2,
+            textDecorationThickness: 3,
           }}
         >
           {todo.text}
