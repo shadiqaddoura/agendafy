@@ -94,6 +94,13 @@ type SortableTodoItemProps = {
   todo: Todo
   editingId: string | null
   editText: string
+  editDate: string
+  editPriority: Priority
+  editTags: string[]
+  editTagText: string
+  editTagDropdownOpen: boolean
+  editTagInputRef: React.RefObject<HTMLInputElement | null>
+  allTags: string[]
   activeTagFilter: string | null
   isDragOverlay?: boolean
   onToggle: (id: string) => void
@@ -101,6 +108,11 @@ type SortableTodoItemProps = {
   onStartEdit: (todo: Todo) => void
   onSaveEdit: (id: string) => void
   onEditTextChange: (text: string) => void
+  onEditDateChange: (date: string) => void
+  onEditPriorityChange: (p: Priority) => void
+  onEditTagsChange: (tags: string[]) => void
+  onEditTagTextChange: (text: string) => void
+  onEditTagDropdownToggle: (open: boolean) => void
   onCancelEdit: () => void
   onTagFilterToggle: (tag: string) => void
 }
@@ -109,6 +121,13 @@ function SortableTodoItem({
   todo,
   editingId,
   editText,
+  editDate,
+  editPriority,
+  editTags,
+  editTagText,
+  editTagDropdownOpen,
+  editTagInputRef,
+  allTags,
   activeTagFilter,
   isDragOverlay = false,
   onToggle,
@@ -116,10 +135,16 @@ function SortableTodoItem({
   onStartEdit,
   onSaveEdit,
   onEditTextChange,
+  onEditDateChange,
+  onEditPriorityChange,
+  onEditTagsChange,
+  onEditTagTextChange,
+  onEditTagDropdownToggle,
   onCancelEdit,
   onTagFilterToggle,
 }: SortableTodoItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id })
+  const isEditing = editingId === todo.id
 
   return (
     <div
@@ -128,19 +153,15 @@ function SortableTodoItem({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.3 : 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        minHeight: 34,
-        padding: '3px 6px',
         borderRadius: 6,
-        background: isDragOverlay ? 'rgba(61,90,128,0.08)' : 'transparent',
-        boxShadow: isDragOverlay ? '0 4px 16px rgba(0,0,0,0.12)' : 'none',
-        cursor: 'default',
+        background: isDragOverlay ? 'rgba(61,90,128,0.08)' : isEditing ? 'rgba(255,255,255,0.7)' : 'transparent',
+        boxShadow: isDragOverlay ? '0 4px 16px rgba(0,0,0,0.12)' : isEditing ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
       }}
-      onMouseEnter={e => { if (!isDragOverlay) e.currentTarget.style.background = 'rgba(61,90,128,0.06)' }}
-      onMouseLeave={e => { if (!isDragOverlay) e.currentTarget.style.background = 'transparent' }}
+      onMouseEnter={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'rgba(61,90,128,0.06)' }}
+      onMouseLeave={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'transparent' }}
     >
+      {/* Main row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px', cursor: 'default' }}>
       {/* Drag handle */}
       <div
         {...attributes}
@@ -195,7 +216,7 @@ function SortableTodoItem({
       </div>
 
       {/* Text / Edit */}
-      {editingId === todo.id ? (
+      {isEditing ? (
         <input
           autoFocus
           value={editText}
@@ -204,7 +225,6 @@ function SortableTodoItem({
             if (e.key === 'Enter') onSaveEdit(todo.id)
             if (e.key === 'Escape') onCancelEdit()
           }}
-          onBlur={() => onSaveEdit(todo.id)}
           style={{
             flex: 1,
             border: 'none',
@@ -235,8 +255,8 @@ function SortableTodoItem({
         </span>
       )}
 
-      {/* Tags */}
-      {todo.tags.length > 0 && (
+      {/* Tags (only when not editing) */}
+      {!isEditing && todo.tags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
           {todo.tags.map(tag => {
             const { bg, text } = tagColor(tag)
@@ -264,26 +284,123 @@ function SortableTodoItem({
         </div>
       )}
 
-      {/* Delete */}
-      <button
-        onClick={() => onDelete(todo.id)}
-        title="Delete"
+      {/* Delete (only when not editing) */}
+      {!isEditing && (
+        <button
+          onClick={() => onDelete(todo.id)}
+          title="Delete"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#ccc',
+            fontSize: 20,
+            flexShrink: 0,
+            lineHeight: 1,
+            padding: '0 4px',
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+        >
+          ×
+        </button>
+      )}
+    </div>
+
+    {/* Edit metadata row */}
+    {isEditing && (
+      <div
         style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#ccc',
-          fontSize: 20,
-          flexShrink: 0,
-          lineHeight: 1,
-          padding: '0 4px',
-          transition: 'color 0.15s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 50px',
+          flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(196,218,245,0.6)',
+          background: 'rgba(255,255,255,0.6)',
         }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
-        onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
       >
-        ×
-      </button>
+        {/* Tag chips */}
+        {editTags.map(tag => {
+          const { bg, text } = tagColor(tag)
+          return (
+            <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
+              #{tag}
+              <button onMouseDown={e => { e.preventDefault(); onEditTagsChange(editTags.filter(t => t !== tag)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
+            </span>
+          )
+        })}
+
+        {/* Tag input + dropdown */}
+        <div style={{ position: 'relative' }}>
+          <input
+            ref={editTagInputRef}
+            type="text"
+            value={editTagText}
+            onChange={e => { onEditTagTextChange(e.target.value); onEditTagDropdownToggle(true) }}
+            onFocus={() => onEditTagDropdownToggle(true)}
+            onBlur={() => setTimeout(() => {
+              const t = editTagText.trim().toLowerCase().replace(/,/g, '')
+              if (t) onEditTagsChange([...new Set([...editTags, t])])
+              onEditTagTextChange('')
+              onEditTagDropdownToggle(false)
+            }, 150)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+                e.preventDefault()
+                const t = editTagText.trim().toLowerCase().replace(/,/g, '')
+                if (t) onEditTagsChange([...new Set([...editTags, t])])
+                onEditTagTextChange('')
+                onEditTagDropdownToggle(false)
+              } else if (e.key === 'Backspace' && !editTagText && editTags.length > 0) {
+                onEditTagsChange(editTags.slice(0, -1))
+              } else if (e.key === 'Escape') {
+                onCancelEdit()
+              }
+            }}
+            placeholder="# tag..."
+            style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#888', width: 70 }}
+          />
+          {editTagDropdownOpen && (() => {
+            const query = editTagText.trim().toLowerCase()
+            const suggestions = allTags.filter(t => !editTags.includes(t) && (query === '' || t.includes(query)))
+            if (suggestions.length === 0) return null
+            return (
+              <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1.5px solid #c4daf5', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
+                <div style={{ padding: '4px 10px', fontSize: 11, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>Existing tags</div>
+                {suggestions.map(tag => {
+                  const { bg, text } = tagColor(tag)
+                  return (
+                    <div key={tag} onMouseDown={e => { e.preventDefault(); onEditTagsChange([...new Set([...editTags, tag])]); onEditTagTextChange(''); onEditTagDropdownToggle(false); editTagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 16, fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 8, color: '#444' }} onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 14 }}>#{tag}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* Date */}
+        <input type="date" value={editDate} onChange={e => onEditDateChange(e.target.value)} style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer' }} />
+
+        {/* Priority dots */}
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          {(['low', 'medium', 'high'] as Priority[]).map(p => (
+            <button key={p} onMouseDown={e => { e.preventDefault(); onEditPriorityChange(p) }} title={PRIORITY_LABELS[p]} style={{ width: 16, height: 16, borderRadius: '50%', border: editPriority === p ? '2.5px solid #333' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: editPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }} />
+          ))}
+        </div>
+
+        {/* Save / Cancel */}
+        <button onMouseDown={e => { e.preventDefault(); onSaveEdit(todo.id) }} disabled={!editText.trim()} style={{ marginLeft: 'auto', background: editText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 17, fontFamily: "'Caveat', cursive", cursor: editText.trim() ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+          Save
+        </button>
+        <button onMouseDown={e => { e.preventDefault(); onCancelEdit() }} style={{ background: 'none', border: '1.5px solid #ccc', borderRadius: 20, padding: '5px 14px', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#aaa', cursor: 'pointer', flexShrink: 0 }}>
+          Cancel
+        </button>
+      </div>
+    )}
     </div>
   )
 }
@@ -299,11 +416,17 @@ export default function NotebookTodo() {
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editPriority, setEditPriority] = useState<Priority>('medium')
+  const [editTags, setEditTags] = useState<string[]>([])
+  const [editTagText, setEditTagText] = useState('')
+  const [editTagDropdownOpen, setEditTagDropdownOpen] = useState(false)
   const [inlineAddFocused, setInlineAddFocused] = useState(false)
   const [currentPage, setCurrentPage] = useState(todayStr())
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const tagInputRef = useRef<HTMLInputElement>(null)
+  const editTagInputRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -396,13 +519,21 @@ export default function NotebookTodo() {
   function startEdit(todo: Todo) {
     setEditingId(todo.id)
     setEditText(todo.text)
+    setEditDate(todo.date)
+    setEditPriority(todo.priority)
+    setEditTags(todo.tags)
+    setEditTagText('')
   }
 
   function saveEdit(id: string) {
     const text = editText.trim()
     if (!text) return
-    setTodos(prev => prev.map(t => (t.id === id ? { ...t, text } : t)))
+    const tags = editTagText.trim()
+      ? [...new Set([...editTags, editTagText.trim().toLowerCase()])]
+      : editTags
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, text, date: editDate, priority: editPriority, tags } : t))
     setEditingId(null)
+    setEditTagText('')
   }
 
   function clearCompleted() {
@@ -766,12 +897,24 @@ export default function NotebookTodo() {
                       todo={todo}
                       editingId={editingId}
                       editText={editText}
+                      editDate={editDate}
+                      editPriority={editPriority}
+                      editTags={editTags}
+                      editTagText={editTagText}
+                      editTagDropdownOpen={editTagDropdownOpen}
+                      editTagInputRef={editTagInputRef}
+                      allTags={allTags}
                       activeTagFilter={activeTagFilter}
                       onToggle={toggleTodo}
                       onDelete={deleteTodo}
                       onStartEdit={startEdit}
                       onSaveEdit={saveEdit}
                       onEditTextChange={setEditText}
+                      onEditDateChange={setEditDate}
+                      onEditPriorityChange={setEditPriority}
+                      onEditTagsChange={setEditTags}
+                      onEditTagTextChange={setEditTagText}
+                      onEditTagDropdownToggle={setEditTagDropdownOpen}
                       onCancelEdit={() => setEditingId(null)}
                       onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
                     />
@@ -787,6 +930,13 @@ export default function NotebookTodo() {
                         todo={dragged}
                         editingId={null}
                         editText=""
+                        editDate=""
+                        editPriority="medium"
+                        editTags={[]}
+                        editTagText=""
+                        editTagDropdownOpen={false}
+                        editTagInputRef={{ current: null }}
+                        allTags={[]}
                         activeTagFilter={activeTagFilter}
                         isDragOverlay
                         onToggle={() => {}}
@@ -794,6 +944,11 @@ export default function NotebookTodo() {
                         onStartEdit={() => {}}
                         onSaveEdit={() => {}}
                         onEditTextChange={() => {}}
+                        onEditDateChange={() => {}}
+                        onEditPriorityChange={() => {}}
+                        onEditTagsChange={() => {}}
+                        onEditTagTextChange={() => {}}
+                        onEditTagDropdownToggle={() => {}}
                         onCancelEdit={() => {}}
                         onTagFilterToggle={() => {}}
                       />
