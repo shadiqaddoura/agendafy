@@ -21,6 +21,11 @@ import { CSS } from '@dnd-kit/utilities'
 
 type Priority = 'low' | 'medium' | 'high'
 
+type Group = {
+  id: string
+  name: string
+}
+
 type Todo = {
   id: string
   text: string
@@ -28,6 +33,7 @@ type Todo = {
   date: string // YYYY-MM-DD or ''
   priority: Priority
   tags: string[]
+  groupId?: string
   createdAt: number
 }
 
@@ -101,7 +107,10 @@ type SortableTodoItemProps = {
   editTagDropdownOpen: boolean
   editTagInputRef: React.RefObject<HTMLInputElement | null>
   allTags: string[]
+  groups: Group[]
+  editGroupId: string
   activeTagFilter: string | null
+  onEditGroupChange: (groupId: string) => void
   isDragOverlay?: boolean
   onToggle: (id: string) => void
   onDelete: (id: string) => void
@@ -128,7 +137,10 @@ function SortableTodoItem({
   editTagDropdownOpen,
   editTagInputRef,
   allTags,
+  groups,
+  editGroupId,
   activeTagFilter,
+  onEditGroupChange,
   isDragOverlay = false,
   onToggle,
   onDelete,
@@ -284,6 +296,15 @@ function SortableTodoItem({
         </div>
       )}
 
+      {!isEditing && todo.groupId && (() => {
+        const g = groups.find(g => g.id === todo.groupId)
+        return g ? (
+          <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0 }}>
+            📁 {g.name}
+          </span>
+        ) : null
+      })()}
+
       {/* Delete (only when not editing) */}
       {!isEditing && (
         <button
@@ -392,6 +413,17 @@ function SortableTodoItem({
           ))}
         </div>
 
+        {/* Group */}
+        <select
+          value={editGroupId}
+          onMouseDown={e => e.stopPropagation()}
+          onChange={e => onEditGroupChange(e.target.value)}
+          style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
+        >
+          <option value="">📁 No group</option>
+          {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+
         {/* Save / Cancel */}
         <button onMouseDown={e => { e.preventDefault(); onSaveEdit(todo.id) }} disabled={!editText.trim()} style={{ marginLeft: 'auto', background: editText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 17, fontFamily: "'Caveat', cursive", cursor: editText.trim() ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
           Save
@@ -407,6 +439,10 @@ function SortableTodoItem({
 
 export default function NotebookTodo() {
   const [todos, setTodos] = useState<Todo[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
+  const [inputGroupId, setInputGroupId] = useState<string>('')
+  const [editGroupId, setEditGroupId] = useState<string>('')
+  const [addGroupName, setAddGroupName] = useState<string>('')
   const [inputText, setInputText] = useState('')
   const [inputDate, setInputDate] = useState(todayStr())
   const [inputPriority, setInputPriority] = useState<Priority>('medium')
@@ -450,6 +486,7 @@ export default function NotebookTodo() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('agendafy-todos')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setTodos(JSON.parse(saved))
     } catch {}
   }, [])
@@ -457,6 +494,31 @@ export default function NotebookTodo() {
   useEffect(() => {
     localStorage.setItem('agendafy-todos', JSON.stringify(todos))
   }, [todos])
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('agendafy-groups')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (saved) setGroups(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('agendafy-groups', JSON.stringify(groups))
+  }, [groups])
+
+  function createGroup(name: string): string {
+    const trimmed = name.trim()
+    if (!trimmed) return ''
+    const id = crypto.randomUUID()
+    setGroups(prev => [...prev, { id, name: trimmed }])
+    return id
+  }
+
+  function deleteGroup(id: string) {
+    setGroups(prev => prev.filter(g => g.id !== id))
+    setTodos(prev => prev.map(t => t.groupId === id ? { ...t, groupId: undefined } : t))
+  }
 
   function navigatePage(delta: number) {
     setCurrentPage(prev => {
@@ -486,6 +548,7 @@ export default function NotebookTodo() {
       date: inputDate,
       priority: inputPriority,
       tags,
+      groupId: inputGroupId || undefined,
       createdAt: Date.now(),
     }
     setTodos(prev => [...prev, todo])
@@ -522,6 +585,7 @@ export default function NotebookTodo() {
     setEditDate(todo.date)
     setEditPriority(todo.priority)
     setEditTags(todo.tags)
+    setEditGroupId(todo.groupId || '')
     setEditTagText('')
   }
 
@@ -531,7 +595,7 @@ export default function NotebookTodo() {
     const tags = editTagText.trim()
       ? [...new Set([...editTags, editTagText.trim().toLowerCase()])]
       : editTags
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, text, date: editDate, priority: editPriority, tags } : t))
+    setTodos(prev => prev.map(t => t.id === id ? { ...t, text, date: editDate, priority: editPriority, tags, groupId: editGroupId || undefined } : t))
     setEditingId(null)
     setEditTagText('')
   }
@@ -551,6 +615,10 @@ export default function NotebookTodo() {
   })
   const completedCount = todos.filter(t => t.completed).length
   const isToday = currentPage === todayStr()
+  const groupSections = groups
+    .filter(g => pageFilteredTodos.some(t => t.groupId === g.id))
+    .map(g => ({ group: g, todos: pageFilteredTodos.filter(t => t.groupId === g.id) }))
+  const ungroupedTodos = pageFilteredTodos.filter(t => !t.groupId)
 
   return (
     <div
@@ -767,6 +835,46 @@ export default function NotebookTodo() {
             </div>
           )}
 
+          {/* Groups */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Groups</div>
+            {groups.map(g => (
+              <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, color: '#555', background: 'rgba(61,90,128,0.06)', borderRadius: 8, padding: '4px 8px' }}>
+                <span style={{ flex: 1 }}>📁 {g.name}</span>
+                <span style={{ fontSize: 12, color: '#bbb' }}>{todos.filter(t => t.groupId === g.id).length}</span>
+                <button
+                  onClick={() => deleteGroup(g.id)}
+                  title="Delete group"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 16, lineHeight: 1, padding: '0 2px' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#ddd')}
+                >×</button>
+              </div>
+            ))}
+            {/* Inline add group */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input
+                type="text"
+                value={addGroupName}
+                onChange={e => setAddGroupName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    if (addGroupName.trim()) { createGroup(addGroupName.trim()); setAddGroupName('') }
+                  }
+                  if (e.key === 'Escape') setAddGroupName('')
+                }}
+                placeholder="＋ New group..."
+                style={{ flex: 1, border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: "'Caveat', cursive", color: '#888', padding: '3px 2px' }}
+              />
+              {addGroupName.trim() && (
+                <button
+                  onClick={() => { createGroup(addGroupName.trim()); setAddGroupName('') }}
+                  style={{ background: '#3d5a80', color: '#fff', border: 'none', borderRadius: 12, padding: '2px 10px', fontSize: 14, fontFamily: "'Caveat', cursive", cursor: 'pointer' }}
+                >Add</button>
+              )}
+            </div>
+          </div>
+
           <div style={{ fontSize: 13, color: '#ccc', marginTop: 'auto' }}>
             Double-click a task to edit
           </div>
@@ -887,39 +995,92 @@ export default function NotebookTodo() {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               >
-                <SortableContext
-                  items={pageFilteredTodos.map(t => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {pageFilteredTodos.map(todo => (
-                    <SortableTodoItem
-                      key={todo.id}
-                      todo={todo}
-                      editingId={editingId}
-                      editText={editText}
-                      editDate={editDate}
-                      editPriority={editPriority}
-                      editTags={editTags}
-                      editTagText={editTagText}
-                      editTagDropdownOpen={editTagDropdownOpen}
-                      editTagInputRef={editTagInputRef}
-                      allTags={allTags}
-                      activeTagFilter={activeTagFilter}
-                      onToggle={toggleTodo}
-                      onDelete={deleteTodo}
-                      onStartEdit={startEdit}
-                      onSaveEdit={saveEdit}
-                      onEditTextChange={setEditText}
-                      onEditDateChange={setEditDate}
-                      onEditPriorityChange={setEditPriority}
-                      onEditTagsChange={setEditTags}
-                      onEditTagTextChange={setEditTagText}
-                      onEditTagDropdownToggle={setEditTagDropdownOpen}
-                      onCancelEdit={() => setEditingId(null)}
-                      onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
-                    />
-                  ))}
-                </SortableContext>
+                {groupSections.map(group => (
+                  <div key={group.group.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
+                      <span style={{ fontSize: 18 }}>📁</span>
+                      <span style={{ fontSize: 20, fontWeight: 'bold', color: '#3d5a80' }}>{group.group.name}</span>
+                      <span style={{ fontSize: 14, color: '#bbb', marginLeft: 2 }}>({group.todos.length})</span>
+                    </div>
+                    <SortableContext items={group.todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                      {group.todos.map(todo => (
+                        <SortableTodoItem
+                          key={todo.id}
+                          todo={todo}
+                          editingId={editingId}
+                          editText={editText}
+                          editDate={editDate}
+                          editPriority={editPriority}
+                          editTags={editTags}
+                          editTagText={editTagText}
+                          editTagDropdownOpen={editTagDropdownOpen}
+                          editTagInputRef={editTagInputRef}
+                          allTags={allTags}
+                          groups={groups}
+                          editGroupId={editGroupId}
+                          activeTagFilter={activeTagFilter}
+                          onToggle={toggleTodo}
+                          onDelete={deleteTodo}
+                          onStartEdit={startEdit}
+                          onSaveEdit={saveEdit}
+                          onEditTextChange={setEditText}
+                          onEditDateChange={setEditDate}
+                          onEditPriorityChange={setEditPriority}
+                          onEditTagsChange={setEditTags}
+                          onEditTagTextChange={setEditTagText}
+                          onEditTagDropdownToggle={setEditTagDropdownOpen}
+                          onEditGroupChange={setEditGroupId}
+                          onCancelEdit={() => setEditingId(null)}
+                          onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                        />
+                      ))}
+                    </SortableContext>
+                  </div>
+                ))}
+
+                {ungroupedTodos.length > 0 && (
+                  <>
+                    {groupSections.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
+                        <span style={{ fontSize: 18, opacity: 0.4 }}>📋</span>
+                        <span style={{ fontSize: 20, color: '#aaa' }}>Other</span>
+                      </div>
+                    )}
+                    <SortableContext items={ungroupedTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                      {ungroupedTodos.map(todo => (
+                        <SortableTodoItem
+                          key={todo.id}
+                          todo={todo}
+                          editingId={editingId}
+                          editText={editText}
+                          editDate={editDate}
+                          editPriority={editPriority}
+                          editTags={editTags}
+                          editTagText={editTagText}
+                          editTagDropdownOpen={editTagDropdownOpen}
+                          editTagInputRef={editTagInputRef}
+                          allTags={allTags}
+                          groups={groups}
+                          editGroupId={editGroupId}
+                          activeTagFilter={activeTagFilter}
+                          onToggle={toggleTodo}
+                          onDelete={deleteTodo}
+                          onStartEdit={startEdit}
+                          onSaveEdit={saveEdit}
+                          onEditTextChange={setEditText}
+                          onEditDateChange={setEditDate}
+                          onEditPriorityChange={setEditPriority}
+                          onEditTagsChange={setEditTags}
+                          onEditTagTextChange={setEditTagText}
+                          onEditTagDropdownToggle={setEditTagDropdownOpen}
+                          onEditGroupChange={setEditGroupId}
+                          onCancelEdit={() => setEditingId(null)}
+                          onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                        />
+                      ))}
+                    </SortableContext>
+                  </>
+                )}
 
                 <DragOverlay>
                   {activeDragId ? (() => {
@@ -937,6 +1098,8 @@ export default function NotebookTodo() {
                         editTagDropdownOpen={false}
                         editTagInputRef={{ current: null }}
                         allTags={[]}
+                        groups={[]}
+                        editGroupId=""
                         activeTagFilter={activeTagFilter}
                         isDragOverlay
                         onToggle={() => {}}
@@ -949,6 +1112,7 @@ export default function NotebookTodo() {
                         onEditTagsChange={() => {}}
                         onEditTagTextChange={() => {}}
                         onEditTagDropdownToggle={() => {}}
+                        onEditGroupChange={() => {}}
                         onCancelEdit={() => {}}
                         onTagFilterToggle={() => {}}
                       />
@@ -1089,6 +1253,17 @@ export default function NotebookTodo() {
                       <button key={p} onMouseDown={e => { e.preventDefault(); setInputPriority(p) }} title={PRIORITY_LABELS[p]} style={{ width: 16, height: 16, borderRadius: '50%', border: inputPriority === p ? '2.5px solid #333' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: inputPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }} />
                     ))}
                   </div>
+
+                  {/* Group */}
+                  <select
+                    value={inputGroupId}
+                    onMouseDown={e => e.stopPropagation()}
+                    onChange={e => setInputGroupId(e.target.value)}
+                    style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
+                  >
+                    <option value="">📁 No group</option>
+                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  </select>
 
                   {/* Add button */}
                   <button
