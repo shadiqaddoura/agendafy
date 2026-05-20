@@ -10,7 +10,16 @@ type Todo = {
   completed: boolean
   date: string // YYYY-MM-DD or ''
   priority: Priority
+  tags: string[]
   createdAt: number
+}
+
+// Deterministic pastel color from tag string
+function tagColor(tag: string): { bg: string; text: string } {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) hash = tag.charCodeAt(i) + ((hash << 5) - hash)
+  const hue = Math.abs(hash) % 360
+  return { bg: `hsl(${hue},55%,88%)`, text: `hsl(${hue},50%,32%)` }
 }
 
 const PRIORITY_COLORS: Record<Priority, string> = {
@@ -68,9 +77,13 @@ export default function NotebookTodo() {
   const [inputText, setInputText] = useState('')
   const [inputDate, setInputDate] = useState(todayStr())
   const [inputPriority, setInputPriority] = useState<Priority>('medium')
+  const [inputTags, setInputTags] = useState<string[]>([])
+  const [inputTagText, setInputTagText] = useState('')
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const tagInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     try {
@@ -86,17 +99,35 @@ export default function NotebookTodo() {
   function addTodo() {
     const text = inputText.trim()
     if (!text) return
+    // commit any pending tag text
+    const tags = inputTagText.trim()
+      ? [...new Set([...inputTags, inputTagText.trim().toLowerCase()])]
+      : inputTags
     const todo: Todo = {
       id: crypto.randomUUID(),
       text,
       completed: false,
       date: inputDate,
       priority: inputPriority,
+      tags,
       createdAt: Date.now(),
     }
     setTodos(prev => [...prev, todo])
     setInputText('')
+    setInputTags([])
+    setInputTagText('')
     inputRef.current?.focus()
+  }
+
+  function commitTag(raw: string) {
+    const tag = raw.trim().toLowerCase().replace(/,/g, '')
+    if (!tag) return
+    setInputTags(prev => [...new Set([...prev, tag])])
+    setInputTagText('')
+  }
+
+  function removeInputTag(tag: string) {
+    setInputTags(prev => prev.filter(t => t !== tag))
   }
 
   function toggleTodo(id: string) {
@@ -125,7 +156,11 @@ export default function NotebookTodo() {
     setTodos(prev => prev.filter(t => !t.completed))
   }
 
-  const groups = groupByDate(todos)
+  const allTags = [...new Set(todos.flatMap(t => t.tags))].sort()
+  const filteredTodos = activeTagFilter
+    ? todos.filter(t => t.tags.includes(activeTagFilter))
+    : todos
+  const groups = groupByDate(filteredTodos)
   const completedCount = todos.filter(t => t.completed).length
 
   return (
@@ -305,6 +340,80 @@ export default function NotebookTodo() {
                   marginBottom: 10,
                 }}
               />
+              {/* Tag chips input */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 5,
+                  alignItems: 'center',
+                  marginBottom: 10,
+                  minHeight: 28,
+                }}
+              >
+                {inputTags.map(tag => {
+                  const { bg, text } = tagColor(tag)
+                  return (
+                    <span
+                      key={tag}
+                      style={{
+                        background: bg,
+                        color: text,
+                        borderRadius: 12,
+                        padding: '2px 8px',
+                        fontSize: 14,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      #{tag}
+                      <button
+                        onClick={() => removeInputTag(tag)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: text,
+                          fontSize: 14,
+                          lineHeight: 1,
+                          padding: 0,
+                          opacity: 0.7,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )
+                })}
+                <input
+                  ref={tagInputRef}
+                  type="text"
+                  value={inputTagText}
+                  onChange={e => setInputTagText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+                      e.preventDefault()
+                      commitTag(inputTagText)
+                    } else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) {
+                      setInputTags(prev => prev.slice(0, -1))
+                    }
+                  }}
+                  onBlur={() => commitTag(inputTagText)}
+                  placeholder={inputTags.length === 0 ? '# add tags...' : '# more...'}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 15,
+                    fontFamily: "'Caveat', cursive",
+                    color: '#888',
+                    minWidth: 80,
+                    flex: 1,
+                  }}
+                />
+              </div>
+
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input
                   type="date"
@@ -412,6 +521,56 @@ export default function NotebookTodo() {
             ))}
           </div>
 
+          {/* Tag filter */}
+          {allTags.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Filter by tag</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {allTags.map(tag => {
+                  const { bg, text } = tagColor(tag)
+                  const active = activeTagFilter === tag
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setActiveTagFilter(active ? null : tag)}
+                      style={{
+                        background: active ? text : bg,
+                        color: active ? '#fff' : text,
+                        border: `1.5px solid ${text}`,
+                        borderRadius: 12,
+                        padding: '3px 10px',
+                        fontSize: 15,
+                        fontFamily: "'Caveat', cursive",
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      #{tag}
+                    </button>
+                  )
+                })}
+              </div>
+              {activeTagFilter && (
+                <button
+                  onClick={() => setActiveTagFilter(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#aaa',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    fontFamily: "'Caveat', cursive",
+                    textDecoration: 'underline',
+                    textAlign: 'left',
+                    padding: 0,
+                  }}
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
+          )}
+
           <div style={{ fontSize: 13, color: '#ccc', marginTop: 'auto' }}>
             Double-click a task to edit
           </div>
@@ -438,6 +597,19 @@ export default function NotebookTodo() {
               <div style={{ fontSize: 56 }}>📓</div>
               <div>Your notebook is empty.</div>
               <div style={{ fontSize: 17 }}>Add your first task on the left!</div>
+            </div>
+          ) : filteredTodos.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '80px 0',
+                color: '#bbb',
+                fontSize: 22,
+                lineHeight: 2,
+              }}
+            >
+              <div style={{ fontSize: 48 }}>🏷️</div>
+              <div>No tasks tagged <strong>#{activeTagFilter}</strong></div>
             </div>
           ) : (
             groups.map(([dateKey, groupTodos]) => (
@@ -546,6 +718,35 @@ export default function NotebookTodo() {
                       >
                         {todo.text}
                       </span>
+                    )}
+
+                    {/* Tags */}
+                    {todo.tags.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
+                        {todo.tags.map(tag => {
+                          const { bg, text } = tagColor(tag)
+                          return (
+                            <span
+                              key={tag}
+                              onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                              title={`Filter by #${tag}`}
+                              style={{
+                                background: bg,
+                                color: text,
+                                borderRadius: 10,
+                                padding: '1px 7px',
+                                fontSize: 13,
+                                cursor: 'pointer',
+                                opacity: todo.completed ? 0.5 : 1,
+                                border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
+                                transition: 'border 0.15s',
+                              }}
+                            >
+                              #{tag}
+                            </span>
+                          )
+                        })}
+                      </div>
                     )}
 
                     <button
