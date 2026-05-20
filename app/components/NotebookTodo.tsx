@@ -79,6 +79,7 @@ export default function NotebookTodo() {
   const [inputPriority, setInputPriority] = useState<Priority>('medium')
   const [inputTags, setInputTags] = useState<string[]>([])
   const [inputTagText, setInputTagText] = useState('')
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false)
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
@@ -341,77 +342,156 @@ export default function NotebookTodo() {
                 }}
               />
               {/* Tag chips input */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 5,
-                  alignItems: 'center',
-                  marginBottom: 10,
-                  minHeight: 28,
-                }}
-              >
-                {inputTags.map(tag => {
-                  const { bg, text } = tagColor(tag)
-                  return (
-                    <span
-                      key={tag}
-                      style={{
-                        background: bg,
-                        color: text,
-                        borderRadius: 12,
-                        padding: '2px 8px',
-                        fontSize: 14,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      #{tag}
-                      <button
-                        onClick={() => removeInputTag(tag)}
+              <div style={{ position: 'relative', marginBottom: 10 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 5,
+                    alignItems: 'center',
+                    minHeight: 28,
+                  }}
+                >
+                  {inputTags.map(tag => {
+                    const { bg, text } = tagColor(tag)
+                    return (
+                      <span
+                        key={tag}
                         style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
+                          background: bg,
                           color: text,
+                          borderRadius: 12,
+                          padding: '2px 8px',
                           fontSize: 14,
-                          lineHeight: 1,
-                          padding: 0,
-                          opacity: 0.7,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
                         }}
                       >
-                        ×
-                      </button>
-                    </span>
+                        #{tag}
+                        <button
+                          onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: text,
+                            fontSize: 14,
+                            lineHeight: 1,
+                            padding: 0,
+                            opacity: 0.7,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )
+                  })}
+                  <input
+                    ref={tagInputRef}
+                    type="text"
+                    value={inputTagText}
+                    onChange={e => {
+                      setInputTagText(e.target.value)
+                      setTagDropdownOpen(true)
+                    }}
+                    onFocus={() => setTagDropdownOpen(true)}
+                    onBlur={() => {
+                      // delay so onMouseDown on suggestions fires first
+                      setTimeout(() => {
+                        commitTag(inputTagText)
+                        setTagDropdownOpen(false)
+                      }, 150)
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+                        e.preventDefault()
+                        commitTag(inputTagText)
+                        setTagDropdownOpen(false)
+                      } else if (e.key === 'Escape') {
+                        setTagDropdownOpen(false)
+                      } else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) {
+                        setInputTags(prev => prev.slice(0, -1))
+                      }
+                    }}
+                    placeholder={inputTags.length === 0 ? '# add tags...' : '# more...'}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      fontSize: 15,
+                      fontFamily: "'Caveat', cursive",
+                      color: '#888',
+                      minWidth: 80,
+                      flex: 1,
+                    }}
+                  />
+                </div>
+
+                {/* Existing tag suggestions dropdown */}
+                {tagDropdownOpen && (() => {
+                  const query = inputTagText.trim().toLowerCase()
+                  const suggestions = allTags.filter(
+                    t => !inputTags.includes(t) && (query === '' || t.includes(query))
                   )
-                })}
-                <input
-                  ref={tagInputRef}
-                  type="text"
-                  value={inputTagText}
-                  onChange={e => setInputTagText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
-                      e.preventDefault()
-                      commitTag(inputTagText)
-                    } else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) {
-                      setInputTags(prev => prev.slice(0, -1))
-                    }
-                  }}
-                  onBlur={() => commitTag(inputTagText)}
-                  placeholder={inputTags.length === 0 ? '# add tags...' : '# more...'}
-                  style={{
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent',
-                    fontSize: 15,
-                    fontFamily: "'Caveat', cursive",
-                    color: '#888',
-                    minWidth: 80,
-                    flex: 1,
-                  }}
-                />
+                  if (suggestions.length === 0) return null
+                  return (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: '#fff',
+                        border: '1.5px solid #c4daf5',
+                        borderRadius: 8,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                        zIndex: 10,
+                        marginTop: 4,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div style={{ padding: '4px 10px', fontSize: 11, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>
+                        Existing tags
+                      </div>
+                      {suggestions.map(tag => {
+                        const { bg, text } = tagColor(tag)
+                        return (
+                          <div
+                            key={tag}
+                            onMouseDown={e => {
+                              e.preventDefault()
+                              setInputTags(prev => [...new Set([...prev, tag])])
+                              setInputTagText('')
+                              setTagDropdownOpen(false)
+                              tagInputRef.current?.focus()
+                            }}
+                            style={{
+                              padding: '7px 12px',
+                              cursor: 'pointer',
+                              fontSize: 16,
+                              fontFamily: "'Caveat', cursive",
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              color: '#444',
+                              transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 14 }}>
+                              #{tag}
+                            </span>
+                            <span style={{ color: '#bbb', fontSize: 13 }}>
+                              {todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
               </div>
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
