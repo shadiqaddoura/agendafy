@@ -61,32 +61,26 @@ function tomorrowStr() {
   return d.toISOString().slice(0, 10)
 }
 
-function formatSectionDate(dateStr: string): string {
-  if (!dateStr) return 'Someday'
+function shiftDate(dateStr: string, delta: number): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + delta)
+  return d.toISOString().slice(0, 10)
+}
+
+function pageLabel(dateStr: string): string {
   const today = todayStr()
   const tomorrow = tomorrowStr()
-  if (dateStr === today) return '📅 Today'
-  if (dateStr === tomorrow) return '🌅 Tomorrow'
+  const yesterday = shiftDate(today, -1)
+  if (dateStr === today) return 'Today'
+  if (dateStr === tomorrow) return 'Tomorrow'
+  if (dateStr === yesterday) return 'Yesterday'
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 }
 
-function groupByDate(todos: Todo[]): [string, Todo[]][] {
-  const map = new Map<string, Todo[]>()
-  for (const todo of todos) {
-    const key = todo.date || ''
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(todo)
-  }
-  // Sort sections: today first, then ascending dates, then empty (Someday)
-  const today = todayStr()
-  const entries = [...map.entries()].sort(([a], [b]) => {
-    if (!a && !b) return 0
-    if (!a) return 1
-    if (!b) return -1
-    return a.localeCompare(b)
-  })
-  return entries
+function pageSubLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 type SortableTodoItemProps = {
@@ -298,6 +292,7 @@ export default function NotebookTodo() {
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  const [currentPage, setCurrentPage] = useState(todayStr())
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const tagInputRef = useRef<HTMLInputElement>(null)
@@ -331,6 +326,20 @@ export default function NotebookTodo() {
   useEffect(() => {
     localStorage.setItem('agendafy-todos', JSON.stringify(todos))
   }, [todos])
+
+  function navigatePage(delta: number) {
+    setCurrentPage(prev => {
+      const next = shiftDate(prev, delta)
+      setInputDate(next)
+      return next
+    })
+  }
+
+  function goToToday() {
+    const today = todayStr()
+    setCurrentPage(today)
+    setInputDate(today)
+  }
 
   function addTodo() {
     const text = inputText.trim()
@@ -393,11 +402,12 @@ export default function NotebookTodo() {
   }
 
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort()
-  const filteredTodos = activeTagFilter
-    ? todos.filter(t => t.tags.includes(activeTagFilter))
-    : todos
-  const groups = groupByDate(filteredTodos)
+  const pageTodos = todos.filter(t => (t.date || todayStr()) === currentPage)
+  const pageFilteredTodos = activeTagFilter
+    ? pageTodos.filter(t => t.tags.includes(activeTagFilter))
+    : pageTodos
   const completedCount = todos.filter(t => t.completed).length
+  const isToday = currentPage === todayStr()
 
   return (
     <div
@@ -866,114 +876,160 @@ export default function NotebookTodo() {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '20px 32px 32px 28px',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {todos.length === 0 ? (
-            <div
+          {/* Page flip navigation */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 32px 10px 28px',
+              borderBottom: '1.5px solid #c4daf5',
+              flexShrink: 0,
+              background: 'rgba(253,248,239,0.95)',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+            }}
+          >
+            <button
+              onClick={() => navigatePage(-1)}
               style={{
-                textAlign: 'center',
-                padding: '80px 0',
-                color: '#bbb',
+                background: 'none',
+                border: '1.5px solid #c4daf5',
+                borderRadius: 8,
+                padding: '4px 14px',
                 fontSize: 22,
-                lineHeight: 2,
+                fontFamily: "'Caveat', cursive",
+                color: '#3d5a80',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              <div style={{ fontSize: 56 }}>📓</div>
-              <div>Your notebook is empty.</div>
-              <div style={{ fontSize: 17 }}>Add your first task on the left!</div>
+              ← Prev
+            </button>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
+                {pageLabel(currentPage)}
+              </div>
+              <div style={{ fontSize: 14, color: '#aaa', marginTop: 2 }}>
+                {pageSubLabel(currentPage)}
+              </div>
+              {!isToday && (
+                <button
+                  onClick={goToToday}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#3d5a80',
+                    fontSize: 13,
+                    fontFamily: "'Caveat', cursive",
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    marginTop: 2,
+                    padding: 0,
+                  }}
+                >
+                  Back to Today
+                </button>
+              )}
             </div>
-          ) : filteredTodos.length === 0 ? (
-            <div
+
+            <button
+              onClick={() => navigatePage(1)}
               style={{
-                textAlign: 'center',
-                padding: '80px 0',
-                color: '#bbb',
+                background: 'none',
+                border: '1.5px solid #c4daf5',
+                borderRadius: 8,
+                padding: '4px 14px',
                 fontSize: 22,
-                lineHeight: 2,
+                fontFamily: "'Caveat', cursive",
+                color: '#3d5a80',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              <div style={{ fontSize: 48 }}>🏷️</div>
-              <div>No tasks tagged <strong>#{activeTagFilter}</strong></div>
-            </div>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={filteredTodos.map(t => t.id)}
-                strategy={verticalListSortingStrategy}
+              Next →
+            </button>
+          </div>
+
+          {/* Todo list for this page */}
+          <div style={{ padding: '20px 32px 32px 28px', flex: 1 }}>
+            {pageFilteredTodos.length === 0 ? (
+              activeTagFilter ? (
+                <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
+                  <div style={{ fontSize: 48 }}>🏷️</div>
+                  <div>No tasks tagged <strong>#{activeTagFilter}</strong> on this page</div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
+                  <div style={{ fontSize: 56 }}>📓</div>
+                  <div>{isToday ? 'Nothing planned for today.' : `Nothing planned for ${pageLabel(currentPage)}.`}</div>
+                  <div style={{ fontSize: 17 }}>Add a task on the left!</div>
+                </div>
+              )
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
               >
-                {groups.map(([dateKey, groupTodos]) => (
-                  <div key={dateKey} style={{ marginBottom: 28 }}>
-                    <div
-                      style={{
-                        fontSize: 17,
-                        fontWeight: 'bold',
-                        color: '#3d5a80',
-                        borderBottom: '2px solid #3d5a80',
-                        paddingBottom: 4,
-                        marginBottom: 8,
-                        letterSpacing: 1,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span>{formatSectionDate(dateKey)}</span>
-                      <span style={{ fontSize: 14, fontWeight: 'normal', color: '#aaa' }}>
-                        {groupTodos.filter(t => !t.completed).length} left
-                      </span>
-                    </div>
-
-                    {groupTodos.map(todo => (
-                      <SortableTodoItem
-                        key={todo.id}
-                        todo={todo}
-                        editingId={editingId}
-                        editText={editText}
-                        activeTagFilter={activeTagFilter}
-                        onToggle={toggleTodo}
-                        onDelete={deleteTodo}
-                        onStartEdit={startEdit}
-                        onSaveEdit={saveEdit}
-                        onEditTextChange={setEditText}
-                        onCancelEdit={() => setEditingId(null)}
-                        onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </SortableContext>
-
-              {/* Floating drag overlay */}
-              <DragOverlay>
-                {activeDragId ? (() => {
-                  const dragged = todos.find(t => t.id === activeDragId)
-                  if (!dragged) return null
-                  return (
+                <SortableContext
+                  items={pageFilteredTodos.map(t => t.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {pageFilteredTodos.map(todo => (
                     <SortableTodoItem
-                      todo={dragged}
-                      editingId={null}
-                      editText=""
+                      key={todo.id}
+                      todo={todo}
+                      editingId={editingId}
+                      editText={editText}
                       activeTagFilter={activeTagFilter}
-                      isDragOverlay
-                      onToggle={() => {}}
-                      onDelete={() => {}}
-                      onStartEdit={() => {}}
-                      onSaveEdit={() => {}}
-                      onEditTextChange={() => {}}
-                      onCancelEdit={() => {}}
-                      onTagFilterToggle={() => {}}
+                      onToggle={toggleTodo}
+                      onDelete={deleteTodo}
+                      onStartEdit={startEdit}
+                      onSaveEdit={saveEdit}
+                      onEditTextChange={setEditText}
+                      onCancelEdit={() => setEditingId(null)}
+                      onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
                     />
-                  )
-                })() : null}
-              </DragOverlay>
-            </DndContext>
-          )}
+                  ))}
+                </SortableContext>
+
+                <DragOverlay>
+                  {activeDragId ? (() => {
+                    const dragged = todos.find(t => t.id === activeDragId)
+                    if (!dragged) return null
+                    return (
+                      <SortableTodoItem
+                        todo={dragged}
+                        editingId={null}
+                        editText=""
+                        activeTagFilter={activeTagFilter}
+                        isDragOverlay
+                        onToggle={() => {}}
+                        onDelete={() => {}}
+                        onStartEdit={() => {}}
+                        onSaveEdit={() => {}}
+                        onEditTextChange={() => {}}
+                        onCancelEdit={() => {}}
+                        onTagFilterToggle={() => {}}
+                      />
+                    )
+                  })() : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+          </div>
         </div>
       </div>
     </div>
