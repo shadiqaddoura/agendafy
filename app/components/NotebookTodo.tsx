@@ -96,6 +96,84 @@ function pageSubLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+// ─── Hand-drawn SVG Icons ────────────────────────────────────────────────────
+
+function IconCheck({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 7.5 C3.5 9.2 4.8 10.5 5.5 11 C7 8.5 9.5 5.8 12 3.5" />
+    </svg>
+  )
+}
+
+function IconClose({ size = 11, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 11 11" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+      <path d="M2 2 L9 9" />
+      <path d="M9 2 L2 9" />
+    </svg>
+  )
+}
+
+function IconFolder({ size = 17, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 18" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 5.5 L1.5 15 C1.5 15.8 2.2 16.5 3 16.5 L17 16.5 C17.8 16.5 18.5 15.8 18.5 15 L18.5 7.5 C18.5 6.7 17.8 6 17 6 L9.5 6 L7.5 4 L3 4 C2.2 4 1.5 4.7 1.5 5.5 Z" />
+    </svg>
+  )
+}
+
+function IconNotebook({ size = 56 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 6 C9 6 8 7 8 8 L8 48 C8 49 9 50 10 50 L46 50 C47 50 48 49 48 48 L48 8 C48 7 47 6 46 6 Z" />
+      <path d="M17 6 L17 50" />
+      <path d="M23 18 L42 18" />
+      <path d="M23 27 L42 27" />
+      <path d="M23 36 L42 36" />
+      <path d="M10 14 L17 14" />
+      <path d="M10 22 L17 22" />
+      <path d="M10 30 L17 30" />
+    </svg>
+  )
+}
+
+function IconTag({ size = 48 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 5 L5 23 C5 24.5 5.5 25.5 6.5 26.5 L26 46 C27.5 47.5 30 47.5 31.5 46 L46 31.5 C47.5 30 47.5 27.5 46 26 L26.5 6.5 C25.5 5.5 24.5 5 23 5 Z" />
+      <circle cx="14" cy="14" r="3" />
+    </svg>
+  )
+}
+
+function IconClipboard({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 22" fill="none" stroke="#aaa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 4 L3 4 C2.5 4 2 4.5 2 5 L2 20 C2 20.5 2.5 21 3 21 L17 21 C17.5 21 18 20.5 18 20 L18 5 C18 4.5 17.5 4 17 4 L13 4" />
+      <path d="M7 1.5 C7 1 7.5 1 8 1 L12 1 C12.5 1 13 1 13 1.5 L13 4 L7 4 Z" />
+      <path d="M6 11 L14 11" />
+      <path d="M6 15 L14 15" />
+    </svg>
+  )
+}
+
+function IconArrowLeft({ size = 20, color = '#3d5a80' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13.5 4 C11 6.5 8 10 6.5 10 C8 10 11 13.5 13.5 16" />
+    </svg>
+  )
+}
+
+function IconArrowRight({ size = 20, color = '#3d5a80' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6.5 4 C9 6.5 12 10 13.5 10 C12 10 9 13.5 6.5 16" />
+    </svg>
+  )
+}
+
 type SortableTodoItemProps = {
   todo: Todo
   editingId: string | null
@@ -224,7 +302,7 @@ function SortableTodoItem({
           color: '#fff',
         }}
       >
-        {todo.completed ? '✓' : ''}
+        {todo.completed ? <IconCheck /> : null}
       </div>
 
       {/* Text / Edit */}
@@ -299,9 +377,9 @@ function SortableTodoItem({
       {!isEditing && todo.groupId && (() => {
         const g = groups.find(g => g.id === todo.groupId)
         return g ? (
-          <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0 }}>
-            📁 {g.name}
-          </span>
+          <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <IconFolder size={13} color="#bbb" /> {g.name}
+            </span>
         ) : null
       })()}
 
@@ -324,7 +402,7 @@ function SortableTodoItem({
           onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
           onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
         >
-          ×
+          <IconClose size={10} />
         </button>
       )}
     </div>
@@ -348,7 +426,7 @@ function SortableTodoItem({
           return (
             <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
               #{tag}
-              <button onMouseDown={e => { e.preventDefault(); onEditTagsChange(editTags.filter(t => t !== tag)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
+              <button onMouseDown={e => { e.preventDefault(); onEditTagsChange(editTags.filter(t => t !== tag)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
             </span>
           )
         })}
@@ -420,7 +498,7 @@ function SortableTodoItem({
           onChange={e => onEditGroupChange(e.target.value)}
           style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
         >
-          <option value="">📁 No group</option>
+          <option value="">No group</option>
           {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
 
@@ -840,15 +918,15 @@ export default function NotebookTodo() {
             <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Groups</div>
             {groups.map(g => (
               <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, color: '#555', background: 'rgba(61,90,128,0.06)', borderRadius: 8, padding: '4px 8px' }}>
-                <span style={{ flex: 1 }}>📁 {g.name}</span>
+                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}><IconFolder size={15} color="#6a8fb5" /> {g.name}</span>
                 <span style={{ fontSize: 12, color: '#bbb' }}>{todos.filter(t => t.groupId === g.id).length}</span>
                 <button
                   onClick={() => deleteGroup(g.id)}
                   title="Delete group"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 16, lineHeight: 1, padding: '0 2px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', lineHeight: 1, padding: '0 2px', display: 'flex', alignItems: 'center' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#ddd')}
-                >×</button>
+                ><IconClose size={10} /></button>
               </div>
             ))}
             {/* Inline add group */}
@@ -863,7 +941,7 @@ export default function NotebookTodo() {
                   }
                   if (e.key === 'Escape') setAddGroupName('')
                 }}
-                placeholder="＋ New group..."
+                placeholder="+ New group..."
                 style={{ flex: 1, border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: "'Caveat', cursive", color: '#888', padding: '3px 2px' }}
               />
               {addGroupName.trim() && (
@@ -920,7 +998,7 @@ export default function NotebookTodo() {
                 gap: 6,
               }}
             >
-              ← Prev
+              <IconArrowLeft /> Prev
             </button>
 
             <div style={{ textAlign: 'center' }}>
@@ -966,7 +1044,7 @@ export default function NotebookTodo() {
                 gap: 6,
               }}
             >
-              Next →
+              Next <IconArrowRight />
             </button>
           </div>
 
@@ -975,7 +1053,7 @@ export default function NotebookTodo() {
             {pageFilteredTodos.length === 0 && !inlineAddFocused ? (
               activeTagFilter ? (
                 <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
-                  <div style={{ fontSize: 48 }}>🏷️</div>
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconTag size={48} /></div>
                   <div>No tasks tagged <strong>#{activeTagFilter}</strong> on this page</div>
                 </div>
               ) : (
@@ -983,7 +1061,7 @@ export default function NotebookTodo() {
                   style={{ textAlign: 'center', padding: '60px 0 20px', color: '#bbb', fontSize: 22, lineHeight: 2, cursor: 'pointer' }}
                   onClick={() => inputRef.current?.focus()}
                 >
-                  <div style={{ fontSize: 56 }}>📓</div>
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconNotebook size={56} /></div>
                   <div>{isToday ? 'Nothing planned for today.' : `Nothing planned for ${pageLabel(currentPage)}.`}</div>
                   <div style={{ fontSize: 17 }}>Click the line below to add a task.</div>
                 </div>
@@ -998,7 +1076,7 @@ export default function NotebookTodo() {
                 {groupSections.map(group => (
                   <div key={group.group.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
-                      <span style={{ fontSize: 18 }}>📁</span>
+                      <IconFolder size={18} color="#3d5a80" />
                       <span style={{ fontSize: 20, fontWeight: 'bold', color: '#3d5a80' }}>{group.group.name}</span>
                       <span style={{ fontSize: 14, color: '#bbb', marginLeft: 2 }}>({group.todos.length})</span>
                     </div>
@@ -1042,7 +1120,7 @@ export default function NotebookTodo() {
                   <>
                     {groupSections.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
-                        <span style={{ fontSize: 18, opacity: 0.4 }}>📋</span>
+                        <IconClipboard size={18} />
                         <span style={{ fontSize: 20, color: '#aaa' }}>Other</span>
                       </div>
                     )}
@@ -1201,7 +1279,7 @@ export default function NotebookTodo() {
                     return (
                       <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
                         #{tag}
-                        <button onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7 }}>×</button>
+                        <button onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
                       </span>
                     )
                   })}
@@ -1261,7 +1339,7 @@ export default function NotebookTodo() {
                     onChange={e => setInputGroupId(e.target.value)}
                     style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
                   >
-                    <option value="">📁 No group</option>
+                    <option value="">No group</option>
                     {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                   </select>
 
