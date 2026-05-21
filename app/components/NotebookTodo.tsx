@@ -701,6 +701,23 @@ export default function NotebookTodo() {
     fetch('/api/todos', { method: 'DELETE' }).catch(console.error)
   }
 
+  function rollOverTasks() {
+    const today = todayStr()
+    const idsToRoll = pageTodos.filter(t => !t.completed).map(t => t.id)
+    if (!idsToRoll.length) return
+    setTodos(prev => {
+      const next = prev.map(t => idsToRoll.includes(t.id) ? { ...t, date: today } : t)
+      idsToRoll.forEach(id => {
+        const updated = next.find(t => t.id === id)!
+        fetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+          .catch(console.error)
+      })
+      return next
+    })
+    setCurrentPage(today)
+    setInputDate(today)
+  }
+
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort()
   const pageTodos = todos.filter(t => (t.date || todayStr()) === currentPage)
   const pageFilteredTodos = (activeTagFilter
@@ -712,6 +729,8 @@ export default function NotebookTodo() {
   })
   const completedCount = todos.filter(t => t.completed).length
   const isToday = currentPage === todayStr()
+  const isPast = currentPage < todayStr()
+  const pendingOnPage = pageTodos.filter(t => !t.completed)
   const groupSections = groups
     .filter(g => pageFilteredTodos.some(t => t.groupId === g.id))
     .map(g => ({ group: g, todos: pageFilteredTodos.filter(t => t.groupId === g.id) }))
@@ -1063,6 +1082,29 @@ export default function NotebookTodo() {
                   }}
                 >
                   Back to Today
+                </button>
+              )}
+              {isPast && pendingOnPage.length > 0 && (
+                <button
+                  onClick={rollOverTasks}
+                  title={`Move ${pendingOnPage.length} uncompleted task${pendingOnPage.length > 1 ? 's' : ''} to today`}
+                  style={{
+                    marginTop: 4,
+                    background: 'linear-gradient(90deg, #3d5a80, #6bcb77)',
+                    border: 'none',
+                    borderRadius: 14,
+                    padding: '3px 14px',
+                    fontSize: 14,
+                    fontFamily: "'Caveat', cursive",
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    boxShadow: '0 1px 6px rgba(61,90,128,0.18)',
+                  }}
+                >
+                  ↩ Roll {pendingOnPage.length} task{pendingOnPage.length > 1 ? 's' : ''} → Today
                 </button>
               )}
             </div>
