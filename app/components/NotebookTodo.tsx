@@ -522,6 +522,8 @@ export default function NotebookTodo() {
   const [inputGroupId, setInputGroupId] = useState<string>('')
   const [editGroupId, setEditGroupId] = useState<string>('')
   const [addGroupName, setAddGroupName] = useState<string>('')
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
+  const [editingGroupName, setEditingGroupName] = useState<string>('')
   const [inputText, setInputText] = useState('')
   const [inputDate, setInputDate] = useState(todayStr())
   const [inputPriority, setInputPriority] = useState<Priority>('medium')
@@ -592,6 +594,14 @@ export default function NotebookTodo() {
     setGroups(prev => prev.filter(g => g.id !== id))
     setTodos(prev => prev.map(t => t.groupId === id ? { ...t, groupId: undefined } : t))
     fetch(`/api/groups/${id}`, { method: 'DELETE' }).catch(console.error)
+  }
+
+  function renameGroup(id: string, name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setGroups(prev => prev.map(g => g.id === id ? { ...g, name: trimmed } : g))
+    fetch(`/api/groups/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: trimmed }) })
+      .catch(console.error)
   }
 
   function navigatePage(delta: number) {
@@ -927,7 +937,26 @@ export default function NotebookTodo() {
             <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Groups</div>
             {groups.map(g => (
               <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, color: '#555', background: 'rgba(61,90,128,0.06)', borderRadius: 8, padding: '4px 8px' }}>
-                <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 5 }}><IconFolder size={15} color="#6a8fb5" /> {g.name}</span>
+                <IconFolder size={15} color="#6a8fb5" />
+                {editingGroupId === g.id ? (
+                  <input
+                    autoFocus
+                    value={editingGroupName}
+                    onChange={e => setEditingGroupName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { renameGroup(g.id, editingGroupName); setEditingGroupId(null) }
+                      if (e.key === 'Escape') setEditingGroupId(null)
+                    }}
+                    onBlur={() => { renameGroup(g.id, editingGroupName); setEditingGroupId(null) }}
+                    style={{ flex: 1, border: 'none', borderBottom: '1.5px solid #3d5a80', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: "'Caveat', cursive", color: '#3d5a80', padding: '1px 2px' }}
+                  />
+                ) : (
+                  <span
+                    style={{ flex: 1, cursor: 'text' }}
+                    onDoubleClick={() => { setEditingGroupId(g.id); setEditingGroupName(g.name) }}
+                    title="Double-click to rename"
+                  >{g.name}</span>
+                )}
                 <span style={{ fontSize: 12, color: '#bbb' }}>{todos.filter(t => t.groupId === g.id).length}</span>
                 <button
                   onClick={() => deleteGroup(g.id)}
@@ -962,8 +991,9 @@ export default function NotebookTodo() {
             </div>
           </div>
 
-          <div style={{ fontSize: 13, color: '#ccc', marginTop: 'auto' }}>
+          <div style={{ fontSize: 13, color: '#ccc', marginTop: 'auto', lineHeight: 1.6 }}>
             Double-click a task to edit
+            <br />Double-click a group to rename
           </div>
         </div>
 
