@@ -35,6 +35,7 @@ type Todo = {
   tags: string[]
   groupId?: string
   createdAt: number
+  sortOrder?: number
 }
 
 // Deterministic pastel color from tag string
@@ -557,45 +558,40 @@ export default function NotebookTodo() {
     setTodos(prev => {
       const oldIdx = prev.findIndex(t => t.id === active.id)
       const newIdx = prev.findIndex(t => t.id === over.id)
-      return arrayMove(prev, oldIdx, newIdx)
+      const next = arrayMove(prev, oldIdx, newIdx)
+      fetch('/api/todos/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: next.map(t => t.id) }),
+      }).catch(console.error)
+      return next
     })
   }
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('agendafy-todos')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setTodos(JSON.parse(saved))
-    } catch {}
+    Promise.all([
+      fetch('/api/todos').then(r => r.json()),
+      fetch('/api/groups').then(r => r.json()),
+    ]).then(([todosData, groupsData]) => {
+      setTodos(todosData)
+      setGroups(groupsData)
+    }).catch(console.error)
   }, [])
-
-  useEffect(() => {
-    localStorage.setItem('agendafy-todos', JSON.stringify(todos))
-  }, [todos])
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('agendafy-groups')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setGroups(JSON.parse(saved))
-    } catch {}
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem('agendafy-groups', JSON.stringify(groups))
-  }, [groups])
 
   function createGroup(name: string): string {
     const trimmed = name.trim()
     if (!trimmed) return ''
     const id = crypto.randomUUID()
     setGroups(prev => [...prev, { id, name: trimmed }])
+    fetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, name: trimmed }) })
+      .catch(console.error)
     return id
   }
 
   function deleteGroup(id: string) {
     setGroups(prev => prev.filter(g => g.id !== id))
     setTodos(prev => prev.map(t => t.groupId === id ? { ...t, groupId: undefined } : t))
+    fetch(`/api/groups/${id}`, { method: 'DELETE' }).catch(console.error)
   }
 
   function navigatePage(delta: number) {
@@ -615,7 +611,6 @@ export default function NotebookTodo() {
   function addTodo() {
     const text = inputText.trim()
     if (!text) return
-    // commit any pending tag text
     const tags = inputTagText.trim()
       ? [...new Set([...inputTags, inputTagText.trim().toLowerCase()])]
       : inputTags
@@ -634,6 +629,8 @@ export default function NotebookTodo() {
     setInputTags([])
     setInputTagText('')
     inputRef.current?.focus()
+    fetch('/api/todos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(todo) })
+      .catch(console.error)
   }
 
   function commitTag(raw: string) {
@@ -648,13 +645,18 @@ export default function NotebookTodo() {
   }
 
   function toggleTodo(id: string) {
-    setTodos(prev =>
-      prev.map(t => (t.id === id ? { ...t, completed: !t.completed } : t))
-    )
+    setTodos(prev => {
+      const next = prev.map(t => (t.id === id ? { ...t, completed: !t.completed } : t))
+      const updated = next.find(t => t.id === id)!
+      fetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+        .catch(console.error)
+      return next
+    })
   }
 
   function deleteTodo(id: string) {
     setTodos(prev => prev.filter(t => t.id !== id))
+    fetch(`/api/todos/${id}`, { method: 'DELETE' }).catch(console.error)
   }
 
   function startEdit(todo: Todo) {
@@ -673,13 +675,20 @@ export default function NotebookTodo() {
     const tags = editTagText.trim()
       ? [...new Set([...editTags, editTagText.trim().toLowerCase()])]
       : editTags
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, text, date: editDate, priority: editPriority, tags, groupId: editGroupId || undefined } : t))
+    setTodos(prev => {
+      const next = prev.map(t => t.id === id ? { ...t, text, date: editDate, priority: editPriority, tags, groupId: editGroupId || undefined } : t)
+      const updated = next.find(t => t.id === id)!
+      fetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+        .catch(console.error)
+      return next
+    })
     setEditingId(null)
     setEditTagText('')
   }
 
   function clearCompleted() {
     setTodos(prev => prev.filter(t => !t.completed))
+    fetch('/api/todos', { method: 'DELETE' }).catch(console.error)
   }
 
   const allTags = [...new Set(todos.flatMap(t => t.tags))].sort()
