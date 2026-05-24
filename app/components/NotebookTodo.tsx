@@ -322,7 +322,7 @@ function SortableTodoItem({
             borderBottom: '2px solid #3d5a80',
             outline: 'none',
             background: 'transparent',
-            fontSize: 22,
+            fontSize: 24,
             fontFamily: "'Caveat', cursive",
             color: '#2c3e50',
           }}
@@ -332,7 +332,7 @@ function SortableTodoItem({
           onDoubleClick={() => !todo.completed && onStartEdit(todo)}
           style={{
             flex: 1,
-            fontSize: 22,
+            fontSize: 24,
             color: todo.completed ? '#bbb' : '#2c3e50',
             cursor: todo.completed ? 'default' : 'text',
             wordBreak: 'break-word',
@@ -425,7 +425,7 @@ function SortableTodoItem({
         {editTags.map(tag => {
           const { bg, text } = tagColor(tag)
           return (
-            <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 18, display: 'flex', alignItems: 'center', gap: 4 }}>
               #{tag}
               <button onMouseDown={e => { e.preventDefault(); onEditTagsChange(editTags.filter(t => t !== tag)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
             </span>
@@ -799,16 +799,16 @@ export default function NotebookTodo() {
           <div style={{ fontSize: 12, letterSpacing: 4, textTransform: 'uppercase', opacity: 0.6, marginBottom: 2 }}>
             Agenda
           </div>
-          <h1 style={{ fontSize: 30, fontWeight: 'bold', margin: 0, lineHeight: 1.1, letterSpacing: 1 }}>
+          <h1 style={{ fontSize: 36, fontWeight: 'bold', margin: 0, lineHeight: 1.1, letterSpacing: 1 }}>
             Agendafy
           </h1>
         </div>
-        <div style={{ opacity: 0.5, fontSize: 15 }}>
+        <div style={{ opacity: 0.5, fontSize: 17 }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, alignItems: 'center' }}>
-          <div style={{ fontSize: 15, opacity: 0.6 }}>
+          <div style={{ fontSize: 17, opacity: 0.6 }}>
             {todos.length - completedCount} pending · {completedCount} done
           </div>
           <button
@@ -816,7 +816,7 @@ export default function NotebookTodo() {
             style={{
               background: 'none',
               border: 'none',
-              fontSize: 15,
+              fontSize: 16,
               fontFamily: "'Caveat', cursive",
               color: showAchievementLogs ? '#fff' : '#d6e2f0',
               textDecoration: 'underline',
@@ -834,7 +834,7 @@ export default function NotebookTodo() {
                 border: 'none',
                 borderRadius: 20,
                 padding: '4px 16px',
-                fontSize: 15,
+                fontSize: 16,
                 fontFamily: "'Caveat', cursive",
                 color: '#e0e0e0',
                 cursor: 'pointer',
@@ -919,7 +919,7 @@ export default function NotebookTodo() {
                 }}
               />
             </div>
-            <div style={{ fontSize: 15, color: '#888', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 17, color: '#888', display: 'flex', justifyContent: 'space-between' }}>
               <span>{todos.length - completedCount} remaining</span>
               <span style={{ color: '#6bcb77' }}>
                 {todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0}%
@@ -931,7 +931,7 @@ export default function NotebookTodo() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Priority</div>
             {(['high', 'medium', 'low'] as Priority[]).map(p => (
-              <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 17, color: '#666' }}>
+              <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, color: '#666' }}>
                 <div style={{ width: 12, height: 12, borderRadius: '50%', background: PRIORITY_COLORS[p], flexShrink: 0 }} />
                 {PRIORITY_LABELS[p]}
               </div>
@@ -956,7 +956,7 @@ export default function NotebookTodo() {
                         border: `1.5px solid ${text}`,
                         borderRadius: 12,
                         padding: '3px 10px',
-                        fontSize: 15,
+                        fontSize: 16,
                         fontFamily: "'Caveat', cursive",
                         cursor: 'pointer',
                         transition: 'all 0.15s',
@@ -974,7 +974,7 @@ export default function NotebookTodo() {
                     background: 'none',
                     border: 'none',
                     color: '#aaa',
-                    fontSize: 13,
+                    fontSize: 15,
                     cursor: 'pointer',
                     fontFamily: "'Caveat', cursive",
                     textDecoration: 'underline',
@@ -992,7 +992,7 @@ export default function NotebookTodo() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Groups</div>
             {groups.map(g => (
-              <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, color: '#555', background: 'rgba(61,90,128,0.06)', borderRadius: 8, padding: '4px 8px' }}>
+              <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 18, color: '#555', background: 'rgba(61,90,128,0.06)', borderRadius: 8, padding: '4px 8px' }}>
                 <IconFolder size={15} color="#6a8fb5" />
                 {editingGroupId === g.id ? (
                   <input
@@ -1004,7 +1004,7 @@ export default function NotebookTodo() {
                       if (e.key === 'Escape') setEditingGroupId(null)
                     }}
                     onBlur={() => { renameGroup(g.id, editingGroupName); setEditingGroupId(null) }}
-                    style={{ flex: 1, border: 'none', borderBottom: '1.5px solid #3d5a80', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: "'Caveat', cursive", color: '#3d5a80', padding: '1px 2px' }}
+                    style={{ flex: 1, border: 'none', borderBottom: '1.5px solid #3d5a80', outline: 'none', background: 'transparent', fontSize: 18, fontFamily: "'Caveat', cursive", color: '#3d5a80', padding: '1px 2px' }}
                   />
                 ) : (
                   <span
@@ -1013,7 +1013,7 @@ export default function NotebookTodo() {
                     title="Double-click to rename"
                   >{g.name}</span>
                 )}
-                <span style={{ fontSize: 12, color: '#bbb' }}>{todos.filter(t => t.groupId === g.id).length}</span>
+                <span style={{ fontSize: 14, color: '#bbb' }}>{todos.filter(t => t.groupId === g.id).length}</span>
                 <button
                   onClick={() => deleteGroup(g.id)}
                   title="Delete group"
@@ -1036,18 +1036,18 @@ export default function NotebookTodo() {
                   if (e.key === 'Escape') setAddGroupName('')
                 }}
                 placeholder="+ New group..."
-                style={{ flex: 1, border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: "'Caveat', cursive", color: '#888', padding: '3px 2px' }}
+                style={{ flex: 1, border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 18, fontFamily: "'Caveat', cursive", color: '#888', padding: '3px 2px' }}
               />
               {addGroupName.trim() && (
                 <button
                   onClick={() => { createGroup(addGroupName.trim()); setAddGroupName('') }}
-                  style={{ background: '#3d5a80', color: '#fff', border: 'none', borderRadius: 12, padding: '2px 10px', fontSize: 14, fontFamily: "'Caveat', cursive", cursor: 'pointer' }}
+                  style={{ background: '#3d5a80', color: '#fff', border: 'none', borderRadius: 12, padding: '2px 10px', fontSize: 16, fontFamily: "'Caveat', cursive", cursor: 'pointer' }}
                 >Add</button>
               )}
             </div>
           </div>
 
-          <div style={{ fontSize: 13, color: '#ccc', marginTop: 'auto', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 15, color: '#ccc', marginTop: 'auto', lineHeight: 1.6 }}>
             Double-click a task to edit
             <br />Double-click a group to rename
           </div>
@@ -1087,10 +1087,10 @@ export default function NotebookTodo() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
+                  <div style={{ fontSize: 30, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
                     Achievement logs
                   </div>
-                  <div style={{ fontSize: 14, color: '#aaa', marginTop: 2 }}>
+                  <div style={{ fontSize: 16, color: '#aaa', marginTop: 2 }}>
                     All completed tasks across all days
                   </div>
                 </div>
@@ -1101,7 +1101,7 @@ export default function NotebookTodo() {
                     border: '1.5px solid #c4daf5',
                     borderRadius: 8,
                     padding: '4px 14px',
-                    fontSize: 22,
+                    fontSize: 24,
                     fontFamily: "'Caveat', cursive",
                     color: '#3d5a80',
                     cursor: 'pointer',
@@ -1116,20 +1116,20 @@ export default function NotebookTodo() {
 
               <div style={{ padding: '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
                 {achievementSections.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
+                  <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 24, lineHeight: 2 }}>
                     No completed tasks yet.
                   </div>
                 ) : (
                   achievementSections.map(([date, sectionTodos]) => (
                     <div key={date || 'no-date'} style={{ marginBottom: 22 }}>
-                      <div style={{ fontSize: 19, color: '#3d5a80', marginBottom: 8, borderBottom: '1.5px solid rgba(196,218,245,0.8)', paddingBottom: 4 }}>
+                      <div style={{ fontSize: 21, color: '#3d5a80', marginBottom: 8, borderBottom: '1.5px solid rgba(196,218,245,0.8)', paddingBottom: 4 }}>
                         {date ? `${pageLabel(date)} · ${pageSubLabel(date)}` : 'No date'}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {sectionTodos.map(todo => (
                           <div key={todo.id} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
                             <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                            <span style={{ flex: 1, fontSize: 22, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
+                            <span style={{ flex: 1, fontSize: 24, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
                               {todo.text}
                             </span>
                             {todo.groupId && groupNameById.get(todo.groupId) && (
@@ -1182,10 +1182,10 @@ export default function NotebookTodo() {
             </button>
 
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 28, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
+              <div style={{ fontSize: 30, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
                 {pageLabel(currentPage)}
               </div>
-              <div style={{ fontSize: 14, color: '#aaa', marginTop: 2 }}>
+              <div style={{ fontSize: 16, color: '#aaa', marginTop: 2 }}>
                 {pageSubLabel(currentPage)}
               </div>
               {!isToday && (
@@ -1195,7 +1195,7 @@ export default function NotebookTodo() {
                     background: 'none',
                     border: 'none',
                     color: '#3d5a80',
-                    fontSize: 13,
+                    fontSize: 15,
                     fontFamily: "'Caveat', cursive",
                     cursor: 'pointer',
                     textDecoration: 'underline',
@@ -1216,7 +1216,7 @@ export default function NotebookTodo() {
                     border: 'none',
                     borderRadius: 14,
                     padding: '3px 14px',
-                    fontSize: 14,
+                    fontSize: 16,
                     fontFamily: "'Caveat', cursive",
                     color: '#fff',
                     cursor: 'pointer',
@@ -1255,18 +1255,18 @@ export default function NotebookTodo() {
           <div style={{ padding: '20px 32px 32px 28px', flex: 1 }}>
             {pageFilteredTodos.length === 0 && !inlineAddFocused ? (
               activeTagFilter ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
+                <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 24, lineHeight: 2 }}>
                   <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconTag size={48} /></div>
                   <div>No tasks tagged <strong>#{activeTagFilter}</strong> on this page</div>
                 </div>
               ) : (
                 <div
-                  style={{ textAlign: 'center', padding: '60px 0 20px', color: '#bbb', fontSize: 22, lineHeight: 2, cursor: 'pointer' }}
+                  style={{ textAlign: 'center', padding: '60px 0 20px', color: '#bbb', fontSize: 24, lineHeight: 2, cursor: 'pointer' }}
                   onClick={() => inputRef.current?.focus()}
                 >
                   <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconNotebook size={56} /></div>
                   <div>{isToday ? 'Nothing planned for today.' : `Nothing planned for ${pageLabel(currentPage)}.`}</div>
-                  <div style={{ fontSize: 17 }}>Click the line below to add a task.</div>
+                  <div style={{ fontSize: 19 }}>Click the line below to add a task.</div>
                 </div>
               )
             ) : (
@@ -1280,8 +1280,8 @@ export default function NotebookTodo() {
                   <div key={group.group.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
                       <IconFolder size={18} color="#3d5a80" />
-                      <span style={{ fontSize: 20, fontWeight: 'bold', color: '#3d5a80' }}>{group.group.name}</span>
-                      <span style={{ fontSize: 14, color: '#bbb', marginLeft: 2 }}>({group.todos.length})</span>
+                      <span style={{ fontSize: 22, fontWeight: 'bold', color: '#3d5a80' }}>{group.group.name}</span>
+                      <span style={{ fontSize: 16, color: '#bbb', marginLeft: 2 }}>({group.todos.length})</span>
                     </div>
                     <SortableContext items={group.todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
                       {group.todos.map(todo => (
@@ -1324,7 +1324,7 @@ export default function NotebookTodo() {
                     {groupSections.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
                         <IconClipboard size={18} />
-                        <span style={{ fontSize: 20, color: '#aaa' }}>Other</span>
+                        <span style={{ fontSize: 22, color: '#aaa' }}>Other</span>
                       </div>
                     )}
                     <SortableContext items={ungroupedTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
@@ -1482,7 +1482,7 @@ export default function NotebookTodo() {
                     return (
                       <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
                         #{tag}
-                        <button onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
+                        <button onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 16, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
                       </span>
                     )
                   })}
@@ -1502,7 +1502,7 @@ export default function NotebookTodo() {
                         else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) setInputTags(prev => prev.slice(0, -1))
                       }}
                       placeholder="# tag..."
-                      style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#888', width: 70 }}
+                      style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#888', width: 70 }}
                     />
                     {tagDropdownOpen && (() => {
                       const query = inputTagText.trim().toLowerCase()
@@ -1510,13 +1510,13 @@ export default function NotebookTodo() {
                       if (suggestions.length === 0) return null
                       return (
                         <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1.5px solid #c4daf5', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
-                          <div style={{ padding: '4px 10px', fontSize: 11, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>Existing tags</div>
+                          <div style={{ padding: '4px 10px', fontSize: 12, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>Existing tags</div>
                           {suggestions.map(tag => {
                             const { bg, text } = tagColor(tag)
                             return (
-                              <div key={tag} onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 16, fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 8, color: '#444' }} onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 14 }}>#{tag}</span>
-                                <span style={{ color: '#bbb', fontSize: 13 }}>{todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}</span>
+                              <div key={tag} onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 18, fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 8, color: '#444' }} onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 16 }}>#{tag}</span>
+                                <span style={{ color: '#bbb', fontSize: 14 }}>{todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}</span>
                               </div>
                             )
                           })}
@@ -1526,7 +1526,7 @@ export default function NotebookTodo() {
                   </div>
 
                   {/* Date */}
-                  <input type="date" value={inputDate} onChange={e => setInputDate(e.target.value)} style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer' }} />
+                  <input type="date" value={inputDate} onChange={e => setInputDate(e.target.value)} style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer' }} />
 
                   {/* Priority dots */}
                   <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -1540,7 +1540,7 @@ export default function NotebookTodo() {
                     value={inputGroupId}
                     onMouseDown={e => e.stopPropagation()}
                     onChange={e => setInputGroupId(e.target.value)}
-                    style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
+                    style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
                   >
                     <option value="">No group</option>
                     {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -1550,7 +1550,7 @@ export default function NotebookTodo() {
                   <button
                     onMouseDown={e => { e.preventDefault(); addTodo(); setInlineAddFocused(false) }}
                     disabled={!inputText.trim()}
-                    style={{ marginLeft: 'auto', background: inputText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 17, fontFamily: "'Caveat', cursive", cursor: inputText.trim() ? 'pointer' : 'not-allowed', transition: 'background 0.2s', flexShrink: 0 }}
+                    style={{ marginLeft: 'auto', background: inputText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 19, fontFamily: "'Caveat', cursive", cursor: inputText.trim() ? 'pointer' : 'not-allowed', transition: 'background 0.2s', flexShrink: 0 }}
                   >
                     + Add
                   </button>
