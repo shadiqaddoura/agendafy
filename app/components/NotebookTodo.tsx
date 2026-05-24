@@ -540,6 +540,7 @@ export default function NotebookTodo() {
   const [editTagDropdownOpen, setEditTagDropdownOpen] = useState(false)
   const [inlineAddFocused, setInlineAddFocused] = useState(false)
   const [currentPage, setCurrentPage] = useState(todayStr())
+  const [showAchievementLogs, setShowAchievementLogs] = useState(false)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const tagInputRef = useRef<HTMLInputElement>(null)
@@ -727,10 +728,31 @@ export default function NotebookTodo() {
     if (a.completed === b.completed) return 0
     return a.completed ? 1 : -1
   })
-  const completedCount = todos.filter(t => t.completed).length
+  const completedTodos = todos.filter(t => t.completed)
+  const completedCount = completedTodos.length
   const isToday = currentPage === todayStr()
   const isPast = currentPage < todayStr()
   const pendingOnPage = pageTodos.filter(t => !t.completed)
+  const groupNameById = new Map(groups.map(g => [g.id, g.name]))
+  const achievementTasks = completedTodos.slice().sort((a, b) => {
+    const aDate = a.date || ''
+    const bDate = b.date || ''
+    if (aDate !== bDate) {
+      if (!aDate) return 1
+      if (!bDate) return -1
+      return aDate < bDate ? 1 : -1
+    }
+    return b.createdAt - a.createdAt
+  })
+  const achievementSections = Array.from(
+    achievementTasks.reduce((map, todo) => {
+      const key = todo.date || ''
+      const existing = map.get(key)
+      if (existing) existing.push(todo)
+      else map.set(key, [todo])
+      return map
+    }, new Map<string, Todo[]>())
+  )
   const groupSections = groups
     .filter(g => pageFilteredTodos.some(t => t.groupId === g.id))
     .map(g => ({ group: g, todos: pageFilteredTodos.filter(t => t.groupId === g.id) }))
@@ -789,6 +811,21 @@ export default function NotebookTodo() {
           <div style={{ fontSize: 15, opacity: 0.6 }}>
             {todos.length - completedCount} pending · {completedCount} done
           </div>
+          <button
+            onClick={() => setShowAchievementLogs(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 15,
+              fontFamily: "'Caveat', cursive",
+              color: showAchievementLogs ? '#fff' : '#d6e2f0',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            Achievement logs
+          </button>
           {completedCount > 0 && (
             <button
               onClick={clearCompleted}
@@ -1023,8 +1060,93 @@ export default function NotebookTodo() {
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
+            position: 'relative',
           }}
         >
+          {showAchievementLogs && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 25,
+                background: '#fdf8ef',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 32px 10px 28px',
+                  borderBottom: '1.5px solid #c4daf5',
+                  flexShrink: 0,
+                  background: 'rgba(253,248,239,0.95)',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
+                    Achievement logs
+                  </div>
+                  <div style={{ fontSize: 14, color: '#aaa', marginTop: 2 }}>
+                    All completed tasks across all days
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAchievementLogs(false)}
+                  style={{
+                    background: 'none',
+                    border: '1.5px solid #c4daf5',
+                    borderRadius: 8,
+                    padding: '4px 14px',
+                    fontSize: 22,
+                    fontFamily: "'Caveat', cursive",
+                    color: '#3d5a80',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <IconArrowLeft /> Back
+                </button>
+              </div>
+
+              <div style={{ padding: '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
+                {achievementSections.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
+                    No completed tasks yet.
+                  </div>
+                ) : (
+                  achievementSections.map(([date, sectionTodos]) => (
+                    <div key={date || 'no-date'} style={{ marginBottom: 22 }}>
+                      <div style={{ fontSize: 19, color: '#3d5a80', marginBottom: 8, borderBottom: '1.5px solid rgba(196,218,245,0.8)', paddingBottom: 4 }}>
+                        {date ? `${pageLabel(date)} · ${pageSubLabel(date)}` : 'No date'}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {sectionTodos.map(todo => (
+                          <div key={todo.id} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                            <span style={{ flex: 1, fontSize: 22, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
+                              {todo.text}
+                            </span>
+                            {todo.groupId && groupNameById.get(todo.groupId) && (
+                              <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Page flip navigation */}
           <div
             style={{
