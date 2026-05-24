@@ -1132,6 +1132,18 @@ export default function NotebookTodo() {
                             <span style={{ flex: 1, fontSize: 24, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
                               {todo.text}
                             </span>
+                            {todo.tags.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
+                                {todo.tags.map(tag => {
+                                  const { bg, text } = tagColor(tag)
+                                  return (
+                                    <span key={tag} style={{ background: bg, color: text, borderRadius: 10, padding: '1px 7px', fontSize: 15, opacity: 0.7 }}>
+                                      #{tag}
+                                    </span>
+                                  )
+                                })}
+                              </div>
+                            )}
                             {todo.groupId && groupNameById.get(todo.groupId) && (
                               <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
