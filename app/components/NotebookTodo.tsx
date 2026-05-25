@@ -576,8 +576,10 @@ export default function NotebookTodo() {
       fetch('/api/todos').then(r => r.json()),
       fetch('/api/groups').then(r => r.json()),
     ]).then(([todosData, groupsData]) => {
-      setTodos(todosData)
-      setGroups(groupsData)
+      if (Array.isArray(todosData)) setTodos(todosData)
+      else console.error('[todos] unexpected response:', todosData)
+      if (Array.isArray(groupsData)) setGroups(groupsData)
+      else console.error('[groups] unexpected response:', groupsData)
     }).catch(console.error)
   }, [])
 
