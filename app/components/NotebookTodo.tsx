@@ -238,6 +238,16 @@ function SortableTodoItem({
 }: SortableTodoItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id })
   const isEditing = editingId === todo.id
+  const lastTapRef = useRef<number>(0)
+
+  function handleTap(e: React.TouchEvent) {
+    const now = Date.now()
+    if (now - lastTapRef.current < 300) {
+      e.preventDefault()
+      if (!todo.completed && !isEditing) onStartEdit(todo)
+    }
+    lastTapRef.current = now
+  }
 
   return (
     <div
@@ -332,6 +342,7 @@ function SortableTodoItem({
       ) : (
         <span
           onDoubleClick={() => !todo.completed && onStartEdit(todo)}
+          onTouchEnd={handleTap}
           style={{
             flex: 1,
             minWidth: 0,
