@@ -334,6 +334,7 @@ function SortableTodoItem({
           onDoubleClick={() => !todo.completed && onStartEdit(todo)}
           style={{
             flex: 1,
+            minWidth: 0,
             fontSize: 24,
             color: todo.completed ? '#bbb' : '#2c3e50',
             cursor: todo.completed ? 'default' : 'text',
@@ -348,8 +349,8 @@ function SortableTodoItem({
         </span>
       )}
 
-      {/* Tags (only when not editing) */}
-      {!isEditing && todo.tags.length > 0 && (
+      {/* Tags (only when not editing, only on desktop) */}
+      {!isEditing && !isMobile && todo.tags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
           {todo.tags.map(tag => {
             const { bg, text } = tagColor(tag)
@@ -377,7 +378,7 @@ function SortableTodoItem({
         </div>
       )}
 
-      {!isEditing && todo.groupId && (() => {
+      {!isEditing && !isMobile && todo.groupId && (() => {
         const g = groups.find(g => g.id === todo.groupId)
         return g ? (
           <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -409,6 +410,43 @@ function SortableTodoItem({
         </button>
       )}
     </div>
+
+    {/* Mobile: tags and group badge on their own row */}
+    {isMobile && !isEditing && (todo.tags.length > 0 || todo.groupId) && (
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '0 6px 6px 64px' }}>
+        {todo.tags.map(tag => {
+          const { bg, text } = tagColor(tag)
+          return (
+            <span
+              key={tag}
+              onClick={() => onTagFilterToggle(tag)}
+              title={`Filter by #${tag}`}
+              style={{
+                background: bg,
+                color: text,
+                borderRadius: 10,
+                padding: '1px 7px',
+                fontSize: 15,
+                cursor: 'pointer',
+                opacity: todo.completed ? 0.5 : 1,
+                border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
+                transition: 'border 0.15s',
+              }}
+            >
+              #{tag}
+            </span>
+          )
+        })}
+        {todo.groupId && (() => {
+          const g = groups.find(g => g.id === todo.groupId)
+          return g ? (
+            <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <IconFolder size={13} color="#bbb" /> {g.name}
+            </span>
+          ) : null
+        })()}
+      </div>
+    )}
 
     {/* Edit metadata row */}
     {isEditing && (
