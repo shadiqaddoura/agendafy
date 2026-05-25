@@ -1,62 +1,56 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, todosCol } from '@/lib/firestore'
 
-type TodoRow = {
-  id: string
-  text: string
-  completed: number
-  date: string
-  priority: string
-  tags: string
-  group_id: string | null
-  sort_order: number
-  created_at: number
-}
+type TodoDoc = { id: string; sortOrder?: number; createdAt?: number; [key: string]: unknown }
 
-function rowToTodo(r: TodoRow) {
-  return {
-    id: r.id,
-    text: r.text,
-    completed: Boolean(r.completed),
-    date: r.date,
-    priority: r.priority,
-    tags: JSON.parse(r.tags) as string[],
-    groupId: r.group_id ?? undefined,
-    sortOrder: r.sort_order,
-    createdAt: r.created_at,
+export async function GET() {
+  try {
+    const snapshot = await todosCol().get()
+    const todos = snapshot.docs
+      .map((doc): TodoDoc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => {
+        const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+        if (so !== 0) return so
+        return (a.createdAt ?? 0) - (b.createdAt ?? 0)
+      })
+    return NextResponse.json(todos)
+  } catch (err) {
+    console.error('[GET /api/todos]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
 
-export function GET() {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM todos ORDER BY sort_order ASC, created_at ASC').all() as TodoRow[]
-  return NextResponse.json(rows.map(rowToTodo))
-}
-
 export async function POST(req: Request) {
-  const db = getDb()
-  const todo = await req.json()
-  const maxRow = db.prepare('SELECT MAX(sort_order) as m FROM todos').get() as { m: number | null }
-  const sortOrder = (maxRow.m ?? -1) + 1
-  db.prepare(`
-    INSERT INTO todos (id, text, completed, date, priority, tags, group_id, sort_order, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    todo.id,
-    todo.text,
-    todo.completed ? 1 : 0,
-    todo.date ?? '',
-    todo.priority ?? 'medium',
-    JSON.stringify(todo.tags ?? []),
-    todo.groupId ?? null,
-    sortOrder,
-    todo.createdAt ?? Date.now(),
-  )
-  return NextResponse.json({ ok: true })
+  try {
+    const todo = await req.json()
+    const lastSnap = await todosCol().orderBy('sortOrder', 'desc').limit(1).get()
+    const sortOrder = lastSnap.empty ? 0 : (lastSnap.docs[0].data().sortOrder as number) + 1
+    await todosCol().doc(todo.id).set({
+      text: todo.text,
+      completed: todo.completed ?? false,
+      date: todo.date ?? '',
+      priority: todo.priority ?? 'medium',
+      tags: todo.tags ?? [],
+      groupId: todo.groupId ?? null,
+      sortOrder,
+      createdAt: todo.createdAt ?? Date.now(),
+    })
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[POST /api/todos]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }
 
 export async function DELETE() {
-  const db = getDb()
-  db.prepare('DELETE FROM todos WHERE completed = 1').run()
-  return NextResponse.json({ ok: true })
+  try {
+    const snapshot = await todosCol().where('completed', '==', true).get()
+    const batch = getDb().batch()
+    snapshot.docs.forEach((doc) => batch.delete(doc.ref))
+    await batch.commit()
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[DELETE /api/todos]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }

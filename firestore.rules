@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // All reads and writes go through the Next.js API routes which use the
+    // Firebase Admin SDK.  The Admin SDK bypasses these rules, so direct
+    // client access is intentionally blocked here.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // groups/{groupId}
+    match /groups/{groupId} {
+      // Only allow reads/writes via Admin SDK (server-side).
+      // Direct client access is denied.
+      allow read, write: if false;
+    }
+
+    // todos/{todoId}
+    match /todos/{todoId} {
+      // Only allow reads/writes via Admin SDK (server-side).
+      // Direct client access is denied.
+      allow read, write: if false;
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

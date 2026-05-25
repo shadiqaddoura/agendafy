@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, todosCol } from '@/lib/firestore'
 
 export async function POST(req: Request) {
-  const db = getDb()
-  const { ids } = await req.json() as { ids: string[] }
-  const update = db.prepare('UPDATE todos SET sort_order=? WHERE id=?')
-  const updateAll = db.transaction((ids: string[]) => {
-    ids.forEach((id, i) => update.run(i, id))
-  })
-  updateAll(ids)
-  return NextResponse.json({ ok: true })
+  try {
+    const { ids } = (await req.json()) as { ids: string[] }
+    const batch = getDb().batch()
+    ids.forEach((id, i) => {
+      batch.update(todosCol().doc(id), { sortOrder: i })
+    })
+    await batch.commit()
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[POST /api/todos/reorder]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }

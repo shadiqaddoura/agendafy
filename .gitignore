@@ -42,3 +42,6 @@ next-env.d.ts
 
 agendafy.db
 agendafy.db-*
+
+# Firebase service account key files — never commit these
+*-firebase-adminsdk-*.json

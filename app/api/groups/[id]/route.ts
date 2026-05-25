@@ -1,24 +1,35 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getDb, groupsCol, todosCol } from '@/lib/firestore'
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const db = getDb()
-  const { id } = await params
-  const { name } = await req.json()
-  db.prepare('UPDATE groups SET name=? WHERE id=?').run(name, id)
-  return NextResponse.json({ ok: true })
+  try {
+    const { id } = await params
+    const { name } = await req.json()
+    await groupsCol().doc(id).update({ name })
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[PATCH /api/groups/:id]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }
 
 export async function DELETE(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const db = getDb()
-  const { id } = await params
-  db.prepare('UPDATE todos SET group_id=NULL WHERE group_id=?').run(id)
-  db.prepare('DELETE FROM groups WHERE id=?').run(id)
-  return NextResponse.json({ ok: true })
+  try {
+    const { id } = await params
+    const todosSnap = await todosCol().where('groupId', '==', id).get()
+    const batch = getDb().batch()
+    todosSnap.docs.forEach((doc) => batch.update(doc.ref, { groupId: null }))
+    batch.delete(groupsCol().doc(id))
+    await batch.commit()
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[DELETE /api/groups/:id]', err)
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
 }
