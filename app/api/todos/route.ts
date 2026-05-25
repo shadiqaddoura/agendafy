@@ -1,62 +1,40 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { db, todosCol } from '@/lib/firestore'
+import { FieldValue } from 'firebase-admin/firestore'
 
-type TodoRow = {
-  id: string
-  text: string
-  completed: number
-  date: string
-  priority: string
-  tags: string
-  group_id: string | null
-  sort_order: number
-  created_at: number
-}
-
-function rowToTodo(r: TodoRow) {
-  return {
-    id: r.id,
-    text: r.text,
-    completed: Boolean(r.completed),
-    date: r.date,
-    priority: r.priority,
-    tags: JSON.parse(r.tags) as string[],
-    groupId: r.group_id ?? undefined,
-    sortOrder: r.sort_order,
-    createdAt: r.created_at,
-  }
-}
-
-export function GET() {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM todos ORDER BY sort_order ASC, created_at ASC').all() as TodoRow[]
-  return NextResponse.json(rows.map(rowToTodo))
+export async function GET() {
+  const snapshot = await todosCol()
+    .orderBy('sortOrder', 'asc')
+    .orderBy('createdAt', 'asc')
+    .get()
+  const todos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  return NextResponse.json(todos)
 }
 
 export async function POST(req: Request) {
-  const db = getDb()
   const todo = await req.json()
-  const maxRow = db.prepare('SELECT MAX(sort_order) as m FROM todos').get() as { m: number | null }
-  const sortOrder = (maxRow.m ?? -1) + 1
-  db.prepare(`
-    INSERT INTO todos (id, text, completed, date, priority, tags, group_id, sort_order, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    todo.id,
-    todo.text,
-    todo.completed ? 1 : 0,
-    todo.date ?? '',
-    todo.priority ?? 'medium',
-    JSON.stringify(todo.tags ?? []),
-    todo.groupId ?? null,
+
+  // Determine next sort order
+  const lastSnap = await todosCol().orderBy('sortOrder', 'desc').limit(1).get()
+  const sortOrder = lastSnap.empty ? 0 : (lastSnap.docs[0].data().sortOrder as number) + 1
+
+  await todosCol().doc(todo.id).set({
+    text: todo.text,
+    completed: todo.completed ?? false,
+    date: todo.date ?? '',
+    priority: todo.priority ?? 'medium',
+    tags: todo.tags ?? [],
+    groupId: todo.groupId ?? null,
     sortOrder,
-    todo.createdAt ?? Date.now(),
-  )
+    createdAt: todo.createdAt ?? Date.now(),
+  })
   return NextResponse.json({ ok: true })
 }
 
 export async function DELETE() {
-  const db = getDb()
-  db.prepare('DELETE FROM todos WHERE completed = 1').run()
+  const snapshot = await todosCol().where('completed', '==', true).get()
+  const batch = db.batch()
+  snapshot.docs.forEach((doc) => batch.delete(doc.ref))
+  await batch.commit()
   return NextResponse.json({ ok: true })
 }

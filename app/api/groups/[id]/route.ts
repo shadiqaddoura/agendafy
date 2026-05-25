@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { db, groupsCol, todosCol } from '@/lib/firestore'
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const db = getDb()
   const { id } = await params
   const { name } = await req.json()
-  db.prepare('UPDATE groups SET name=? WHERE id=?').run(name, id)
+  await groupsCol().doc(id).update({ name })
   return NextResponse.json({ ok: true })
 }
 
@@ -16,9 +15,14 @@ export async function DELETE(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const db = getDb()
   const { id } = await params
-  db.prepare('UPDATE todos SET group_id=NULL WHERE group_id=?').run(id)
-  db.prepare('DELETE FROM groups WHERE id=?').run(id)
+
+  // Unassign todos that belong to this group
+  const todosSnap = await todosCol().where('groupId', '==', id).get()
+  const batch = db.batch()
+  todosSnap.docs.forEach((doc) => batch.update(doc.ref, { groupId: null }))
+  batch.delete(groupsCol().doc(id))
+  await batch.commit()
+
   return NextResponse.json({ ok: true })
 }
