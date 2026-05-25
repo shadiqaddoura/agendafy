@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db, todosCol } from '@/lib/firestore'
+import { getDb, todosCol } from '@/lib/firestore'
 
 export async function GET() {
   try {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 export async function DELETE() {
   try {
     const snapshot = await todosCol().where('completed', '==', true).get()
-    const batch = db.batch()
+    const batch = getDb().batch()
     snapshot.docs.forEach((doc) => batch.delete(doc.ref))
     await batch.commit()
     return NextResponse.json({ ok: true })

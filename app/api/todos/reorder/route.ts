@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db, todosCol } from '@/lib/firestore'
+import { getDb, todosCol } from '@/lib/firestore'
 
 export async function POST(req: Request) {
   try {
     const { ids } = (await req.json()) as { ids: string[] }
-    const batch = db.batch()
+    const batch = getDb().batch()
     ids.forEach((id, i) => {
       batch.update(todosCol().doc(id), { sortOrder: i })
     })

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db, groupsCol, todosCol } from '@/lib/firestore'
+import { getDb, groupsCol, todosCol } from '@/lib/firestore'
 
 export async function PATCH(
   req: Request,
@@ -23,7 +23,7 @@ export async function DELETE(
   try {
     const { id } = await params
     const todosSnap = await todosCol().where('groupId', '==', id).get()
-    const batch = db.batch()
+    const batch = getDb().batch()
     todosSnap.docs.forEach((doc) => batch.update(doc.ref, { groupId: null }))
     batch.delete(groupsCol().doc(id))
     await batch.commit()

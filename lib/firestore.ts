@@ -1,8 +1,8 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
+import { initializeApp, getApps, getApp, cert, App } from 'firebase-admin/app'
+import { getFirestore, Firestore } from 'firebase-admin/firestore'
 
-function initFirebase() {
-  if (getApps().length > 0) return
+function getFirebaseApp(): App {
+  if (getApps().length > 0) return getApp()
 
   const projectId = process.env.FIREBASE_PROJECT_ID
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
@@ -14,19 +14,16 @@ function initFirebase() {
     )
   }
 
-  initializeApp({
+  return initializeApp({
     credential: cert({ projectId, clientEmail, privateKey }),
   })
 }
 
-try {
-  initFirebase()
-} catch (err) {
-  console.error('[firestore] Initialization failed:', err)
+// Lazy — called inside route handlers so errors are caught by their try/catch
+export function getDb(): Firestore {
+  return getFirestore(getFirebaseApp())
 }
 
-export const db = getFirestore()
-
 // Collection references
-export const groupsCol = () => db.collection('groups')
-export const todosCol = () => db.collection('todos')
+export const groupsCol = () => getDb().collection('groups')
+export const todosCol = () => getDb().collection('todos')
