@@ -759,11 +759,6 @@ export default function NotebookTodo() {
     setEditTagText('')
   }
 
-  function clearCompleted() {
-    setTodos(prev => prev.filter(t => !t.completed))
-    fetch('/api/todos', { method: 'DELETE' }).catch(console.error)
-  }
-
   function rollOverTasks() {
     const today = todayStr()
     const idsToRoll = pageTodos.filter(t => !t.completed).map(t => t.id)
@@ -909,23 +904,7 @@ export default function NotebookTodo() {
           >
             {isMobile ? 'Achievements' : 'Achievement logs'}
           </button>
-          {completedCount > 0 && (
-            <button
-              onClick={clearCompleted}
-              style={{
-                background: 'rgba(255,255,255,0.12)',
-                border: 'none',
-                borderRadius: 20,
-                padding: isMobile ? '4px 10px' : '4px 16px',
-                fontSize: isMobile ? 13 : 16,
-                fontFamily: "'Caveat', cursive",
-                color: '#e0e0e0',
-                cursor: 'pointer',
-              }}
-            >
-              {isMobile ? `Clear ${completedCount}` : `Clear ${completedCount} done`}
-            </button>
-          )}
+
         </div>
       </div>
 
