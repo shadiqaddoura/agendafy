@@ -3,11 +3,14 @@ import { getDb, todosCol } from '@/lib/firestore'
 
 export async function GET() {
   try {
-    const snapshot = await todosCol()
-      .orderBy('sortOrder', 'asc')
-      .orderBy('createdAt', 'asc')
-      .get()
-    const todos = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    const snapshot = await todosCol().get()
+    const todos = snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => {
+        const so = ((a.sortOrder as number) ?? 0) - ((b.sortOrder as number) ?? 0)
+        if (so !== 0) return so
+        return ((a.createdAt as number) ?? 0) - ((b.createdAt as number) ?? 0)
+      })
     return NextResponse.json(todos)
   } catch (err) {
     console.error('[GET /api/todos]', err)
