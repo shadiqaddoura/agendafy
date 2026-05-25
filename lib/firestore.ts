@@ -19,7 +19,11 @@ function initFirebase() {
   })
 }
 
-initFirebase()
+try {
+  initFirebase()
+} catch (err) {
+  console.error('[firestore] Initialization failed:', err)
+}
 
 export const db = getFirestore()
 
