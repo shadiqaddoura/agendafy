@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
 import { getDb, todosCol } from '@/lib/firestore'
 
+type TodoDoc = { id: string; sortOrder?: number; createdAt?: number; [key: string]: unknown }
+
 export async function GET() {
   try {
     const snapshot = await todosCol().get()
     const todos = snapshot.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
+      .map((doc): TodoDoc => ({ id: doc.id, ...doc.data() }))
       .sort((a, b) => {
-        const so = ((a.sortOrder as number) ?? 0) - ((b.sortOrder as number) ?? 0)
+        const so = (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
         if (so !== 0) return so
-        return ((a.createdAt as number) ?? 0) - ((b.createdAt as number) ?? 0)
+        return (a.createdAt ?? 0) - (b.createdAt ?? 0)
       })
     return NextResponse.json(todos)
   } catch (err) {
