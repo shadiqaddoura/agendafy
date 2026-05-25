@@ -832,7 +832,6 @@ export default function NotebookTodo() {
           zIndex: 2,
           display: 'flex',
           alignItems: 'center',
-          flexWrap: 'wrap',
           gap: isMobile ? 8 : 32,
         }}
       >
