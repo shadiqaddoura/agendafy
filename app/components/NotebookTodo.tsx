@@ -203,6 +203,7 @@ type SortableTodoItemProps = {
   onEditTagDropdownToggle: (open: boolean) => void
   onCancelEdit: () => void
   onTagFilterToggle: (tag: string) => void
+  isMobile?: boolean
 }
 
 function SortableTodoItem({
@@ -233,9 +234,20 @@ function SortableTodoItem({
   onEditTagDropdownToggle,
   onCancelEdit,
   onTagFilterToggle,
+  isMobile = false,
 }: SortableTodoItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id })
   const isEditing = editingId === todo.id
+  const lastTapRef = useRef<number>(0)
+
+  function handleTap(e: React.TouchEvent) {
+    const now = Date.now()
+    if (now - lastTapRef.current < 300) {
+      e.preventDefault()
+      if (!todo.completed && !isEditing) onStartEdit(todo)
+    }
+    lastTapRef.current = now
+  }
 
   return (
     <div
@@ -330,8 +342,10 @@ function SortableTodoItem({
       ) : (
         <span
           onDoubleClick={() => !todo.completed && onStartEdit(todo)}
+          onTouchEnd={handleTap}
           style={{
             flex: 1,
+            minWidth: 0,
             fontSize: 24,
             color: todo.completed ? '#bbb' : '#2c3e50',
             cursor: todo.completed ? 'default' : 'text',
@@ -346,8 +360,8 @@ function SortableTodoItem({
         </span>
       )}
 
-      {/* Tags (only when not editing) */}
-      {!isEditing && todo.tags.length > 0 && (
+      {/* Tags (only when not editing, only on desktop) */}
+      {!isEditing && !isMobile && todo.tags.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
           {todo.tags.map(tag => {
             const { bg, text } = tagColor(tag)
@@ -375,7 +389,7 @@ function SortableTodoItem({
         </div>
       )}
 
-      {!isEditing && todo.groupId && (() => {
+      {!isEditing && !isMobile && todo.groupId && (() => {
         const g = groups.find(g => g.id === todo.groupId)
         return g ? (
           <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -408,6 +422,43 @@ function SortableTodoItem({
       )}
     </div>
 
+    {/* Mobile: tags and group badge on their own row */}
+    {isMobile && !isEditing && (todo.tags.length > 0 || todo.groupId) && (
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '0 6px 6px 64px' }}>
+        {todo.tags.map(tag => {
+          const { bg, text } = tagColor(tag)
+          return (
+            <span
+              key={tag}
+              onClick={() => onTagFilterToggle(tag)}
+              title={`Filter by #${tag}`}
+              style={{
+                background: bg,
+                color: text,
+                borderRadius: 10,
+                padding: '1px 7px',
+                fontSize: 15,
+                cursor: 'pointer',
+                opacity: todo.completed ? 0.5 : 1,
+                border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
+                transition: 'border 0.15s',
+              }}
+            >
+              #{tag}
+            </span>
+          )
+        })}
+        {todo.groupId && (() => {
+          const g = groups.find(g => g.id === todo.groupId)
+          return g ? (
+            <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <IconFolder size={13} color="#bbb" /> {g.name}
+            </span>
+          ) : null
+        })()}
+      </div>
+    )}
+
     {/* Edit metadata row */}
     {isEditing && (
       <div
@@ -415,7 +466,7 @@ function SortableTodoItem({
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          padding: '6px 50px',
+          padding: isMobile ? '6px 12px' : '6px 50px',
           flexWrap: 'wrap',
           borderBottom: '1px solid rgba(196,218,245,0.6)',
           background: 'rgba(255,255,255,0.6)',
@@ -542,6 +593,8 @@ export default function NotebookTodo() {
   const [currentPage, setCurrentPage] = useState(todayStr())
   const [showAchievementLogs, setShowAchievementLogs] = useState(false)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const tagInputRef = useRef<HTMLInputElement>(null)
   const editTagInputRef = useRef<HTMLInputElement>(null)
@@ -581,6 +634,13 @@ export default function NotebookTodo() {
       if (Array.isArray(groupsData)) setGroups(groupsData)
       else console.error('[groups] unexpected response:', groupsData)
     }).catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
   function createGroup(name: string): string {
@@ -699,11 +759,6 @@ export default function NotebookTodo() {
     setEditTagText('')
   }
 
-  function clearCompleted() {
-    setTodos(prev => prev.filter(t => !t.completed))
-    fetch('/api/todos', { method: 'DELETE' }).catch(console.error)
-  }
-
   function rollOverTasks() {
     const today = todayStr()
     const idsToRoll = pageTodos.filter(t => !t.completed).map(t => t.id)
@@ -775,7 +830,7 @@ export default function NotebookTodo() {
       <div
         style={{
           background: 'linear-gradient(180deg, #3d5a80 0%, #293241 100%)',
-          padding: '20px 32px 16px 72px',
+          padding: isMobile ? '12px 16px 10px 16px' : '20px 32px 16px 72px',
           color: '#e0e0e0',
           position: 'relative',
           overflow: 'hidden',
@@ -783,7 +838,7 @@ export default function NotebookTodo() {
           zIndex: 2,
           display: 'flex',
           alignItems: 'center',
-          gap: 32,
+          gap: isMobile ? 8 : 32,
         }}
       >
         <div
@@ -795,6 +850,7 @@ export default function NotebookTodo() {
             height: 220,
             borderRadius: '50%',
             background: 'rgba(255,255,255,0.04)',
+            pointerEvents: 'none',
           }}
         />
         <div>
@@ -805,20 +861,40 @@ export default function NotebookTodo() {
             Agendafy
           </h1>
         </div>
-        <div style={{ opacity: 0.5, fontSize: 17 }}>
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </div>
-
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, alignItems: 'center' }}>
-          <div style={{ fontSize: 17, opacity: 0.6 }}>
-            {todos.length - completedCount} pending · {completedCount} done
+        {!isMobile && (
+          <div style={{ opacity: 0.5, fontSize: 17 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
+        )}
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: isMobile ? 8 : 16, alignItems: 'center' }}>
+          {isMobile ? (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              title="Show sidebar"
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '4px 12px',
+                fontSize: 20,
+                color: '#e0e0e0',
+                cursor: 'pointer',
+              }}
+            >
+              ☰
+            </button>
+          ) : (
+            <div style={{ fontSize: 17, opacity: 0.6 }}>
+              {todos.length - completedCount} pending · {completedCount} done
+            </div>
+          )}
           <button
             onClick={() => setShowAchievementLogs(true)}
             style={{
               background: 'none',
               border: 'none',
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontFamily: "'Caveat', cursive",
               color: showAchievementLogs ? '#fff' : '#d6e2f0',
               textDecoration: 'underline',
@@ -826,25 +902,9 @@ export default function NotebookTodo() {
               padding: 0,
             }}
           >
-            Achievement logs
+            {isMobile ? 'Achievements' : 'Achievement logs'}
           </button>
-          {completedCount > 0 && (
-            <button
-              onClick={clearCompleted}
-              style={{
-                background: 'rgba(255,255,255,0.12)',
-                border: 'none',
-                borderRadius: 20,
-                padding: '4px 16px',
-                fontSize: 16,
-                fontFamily: "'Caveat', cursive",
-                color: '#e0e0e0',
-                cursor: 'pointer',
-              }}
-            >
-              Clear {completedCount} done
-            </button>
-          )}
+
         </div>
       </div>
 
@@ -868,29 +928,57 @@ export default function NotebookTodo() {
         }}
       >
         {/* Binding column */}
-        <div
-          style={{
-            width: 52,
-            flexShrink: 0,
-            background: 'linear-gradient(90deg, #e8ddd0 0%, #f0ebe0 100%)',
-            borderRight: '2px solid #f4a0a0',
-            zIndex: 1,
-          }}
-        />
+        {!isMobile && (
+          <div
+            style={{
+              width: 52,
+              flexShrink: 0,
+              background: 'linear-gradient(90deg, #e8ddd0 0%, #f0ebe0 100%)',
+              borderRight: '2px solid #f4a0a0',
+              zIndex: 1,
+            }}
+          />
+        )}
+
+        {/* Left panel backdrop (mobile) */}
+        {isMobile && sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 49 }}
+          />
+        )}
 
         {/* Left panel — stats + legend + tag filter */}
         <div
           style={{
-            width: 260,
+            position: isMobile ? 'fixed' : undefined,
+            left: isMobile ? 0 : undefined,
+            top: isMobile ? 0 : undefined,
+            bottom: isMobile ? 0 : undefined,
+            zIndex: isMobile ? 50 : undefined,
+            boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.15)' : undefined,
+            background: isMobile ? '#fdf8ef' : undefined,
+            width: isMobile ? '80vw' : 260,
+            maxWidth: isMobile ? 320 : undefined,
             flexShrink: 0,
             overflowY: 'auto',
             padding: '20px 24px 32px 20px',
             borderRight: '1.5px dashed #c4daf5',
-            display: 'flex',
+            display: isMobile ? (sidebarOpen ? 'flex' : 'none') : 'flex',
             flexDirection: 'column',
             gap: 24,
           }}
         >
+          {isMobile && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -8 }}>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 18, padding: '4px 8px', fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <IconClose size={11} /> Close
+              </button>
+            </div>
+          )}
           {/* Stats */}
           <div
             style={{
@@ -1082,7 +1170,7 @@ export default function NotebookTodo() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '14px 32px 10px 28px',
+                  padding: isMobile ? '10px 12px 8px 12px' : '14px 32px 10px 28px',
                   borderBottom: '1.5px solid #c4daf5',
                   flexShrink: 0,
                   background: 'rgba(253,248,239,0.95)',
@@ -1116,7 +1204,7 @@ export default function NotebookTodo() {
                 </button>
               </div>
 
-              <div style={{ padding: '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
+              <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
                 {achievementSections.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 24, lineHeight: 2 }}>
                     No completed tasks yet.
@@ -1129,13 +1217,32 @@ export default function NotebookTodo() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {sectionTodos.map(todo => (
-                          <div key={todo.id} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                            <span style={{ flex: 1, fontSize: 24, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
-                              {todo.text}
-                            </span>
-                            {todo.tags.length > 0 && (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
+                          <div key={todo.id}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
+                              <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                              <span style={{ flex: 1, minWidth: 0, fontSize: 24, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
+                                {todo.text}
+                              </span>
+                              {!isMobile && todo.tags.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
+                                  {todo.tags.map(tag => {
+                                    const { bg, text } = tagColor(tag)
+                                    return (
+                                      <span key={tag} style={{ background: bg, color: text, borderRadius: 10, padding: '1px 7px', fontSize: 15, opacity: 0.7 }}>
+                                        #{tag}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                              {!isMobile && todo.groupId && groupNameById.get(todo.groupId) && (
+                                <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
+                                </span>
+                              )}
+                            </div>
+                            {isMobile && (todo.tags.length > 0 || (todo.groupId && groupNameById.get(todo.groupId))) && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '0 6px 6px 24px' }}>
                                 {todo.tags.map(tag => {
                                   const { bg, text } = tagColor(tag)
                                   return (
@@ -1144,12 +1251,12 @@ export default function NotebookTodo() {
                                     </span>
                                   )
                                 })}
+                                {todo.groupId && groupNameById.get(todo.groupId) && (
+                                  <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
+                                  </span>
+                                )}
                               </div>
-                            )}
-                            {todo.groupId && groupNameById.get(todo.groupId) && (
-                              <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
-                              </span>
                             )}
                           </div>
                         ))}
@@ -1167,7 +1274,7 @@ export default function NotebookTodo() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '14px 32px 10px 28px',
+              padding: isMobile ? '10px 12px 8px 12px' : '14px 32px 10px 28px',
               borderBottom: '1.5px solid #c4daf5',
               flexShrink: 0,
               background: 'rgba(253,248,239,0.95)',
@@ -1266,7 +1373,7 @@ export default function NotebookTodo() {
           </div>
 
           {/* Todo list for this page */}
-          <div style={{ padding: '20px 32px 32px 28px', flex: 1 }}>
+          <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1 }}>
             {pageFilteredTodos.length === 0 && !inlineAddFocused ? (
               activeTagFilter ? (
                 <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 24, lineHeight: 2 }}>
@@ -1327,6 +1434,7 @@ export default function NotebookTodo() {
                           onEditGroupChange={setEditGroupId}
                           onCancelEdit={() => setEditingId(null)}
                           onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                          isMobile={isMobile}
                         />
                       ))}
                     </SortableContext>
@@ -1371,6 +1479,7 @@ export default function NotebookTodo() {
                           onEditGroupChange={setEditGroupId}
                           onCancelEdit={() => setEditingId(null)}
                           onTagFilterToggle={tag => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                          isMobile={isMobile}
                         />
                       ))}
                     </SortableContext>
@@ -1410,6 +1519,7 @@ export default function NotebookTodo() {
                         onEditGroupChange={() => {}}
                         onCancelEdit={() => {}}
                         onTagFilterToggle={() => {}}
+                        isMobile={isMobile}
                       />
                     )
                   })() : null}
@@ -1485,7 +1595,7 @@ export default function NotebookTodo() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '6px 50px',
+                    padding: isMobile ? '6px 12px' : '6px 50px',
                     flexWrap: 'wrap',
                     borderBottom: '1px solid rgba(196,218,245,0.6)',
                   }}
