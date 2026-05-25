@@ -844,6 +844,7 @@ export default function NotebookTodo() {
             height: 220,
             borderRadius: '50%',
             background: 'rgba(255,255,255,0.04)',
+            pointerEvents: 'none',
           }}
         />
         <div>
