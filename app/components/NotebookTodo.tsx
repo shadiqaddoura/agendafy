@@ -631,7 +631,9 @@ export default function NotebookTodo() {
     const existing = quickNotesRef.current.find(n => n.id === id)
     if (!existing) return
     const updated = { ...existing, completed: !existing.completed }
-    setQuickNotes(prev => prev.map(n => n.id === id ? updated : n))
+    const nextNotes = quickNotesRef.current.map(n => n.id === id ? updated : n)
+    quickNotesRef.current = nextNotes
+    setQuickNotes(nextNotes)
     fetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
       .catch(console.error)
   }

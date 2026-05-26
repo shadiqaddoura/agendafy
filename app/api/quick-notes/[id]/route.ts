@@ -11,6 +11,9 @@ export async function PUT(
     const updateData: { text?: string; completed?: boolean } = {}
     if (typeof note.text === 'string') updateData.text = note.text
     if (typeof note.completed === 'boolean') updateData.completed = note.completed
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
     await quickNotesCol().doc(id).update(updateData)
     return NextResponse.json({ ok: true })
   } catch (err) {
