@@ -599,7 +599,6 @@ export default function NotebookTodo() {
   const [inlineAddFocused, setInlineAddFocused] = useState(false)
   const [currentPage, setCurrentPage] = useState(todayStr())
   const [showAchievementLogs, setShowAchievementLogs] = useState(false)
-  const [showQuickNotes, setShowQuickNotes] = useState(false)
   const [quickNotes, setQuickNotes] = useState<QuickNote[]>([])
   const [quickNoteInput, setQuickNoteInput] = useState('')
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
@@ -616,30 +615,32 @@ export default function NotebookTodo() {
 
   // ─── Quick Notes helpers ──────────────────────────────────────────────────────
 
-  function saveQuickNotes(notes: QuickNote[]) {
-    try { localStorage.setItem('agendafy-quick-notes', JSON.stringify(notes)) } catch { /* ignore */ }
-  }
-
   function addQuickNote() {
     const text = quickNoteInput.trim()
     if (!text) return
     const note: QuickNote = { id: crypto.randomUUID(), text, completed: false, createdAt: Date.now() }
-    const next = [note, ...quickNotes]
-    setQuickNotes(next)
-    saveQuickNotes(next)
+    setQuickNotes(prev => [note, ...prev])
     setQuickNoteInput('')
+    quickNoteInputRef.current?.focus()
+    fetch('/api/quick-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note) })
+      .catch(console.error)
   }
 
   function toggleQuickNote(id: string) {
-    const next = quickNotes.map(n => n.id === id ? { ...n, completed: !n.completed } : n)
-    setQuickNotes(next)
-    saveQuickNotes(next)
+    setQuickNotes(prev => {
+      const next = prev.map(n => n.id === id ? { ...n, completed: !n.completed } : n)
+      const updated = next.find(n => n.id === id)
+      if (updated) {
+        fetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+          .catch(console.error)
+      }
+      return next
+    })
   }
 
   function deleteQuickNote(id: string) {
-    const next = quickNotes.filter(n => n.id !== id)
-    setQuickNotes(next)
-    saveQuickNotes(next)
+    setQuickNotes(prev => prev.filter(n => n.id !== id))
+    fetch(`/api/quick-notes/${id}`, { method: 'DELETE' }).catch(console.error)
   }
 
   // ─── Drag ─────────────────────────────────────────────────────────────────────
@@ -669,11 +670,27 @@ export default function NotebookTodo() {
     Promise.all([
       fetch('/api/todos').then(r => r.json()),
       fetch('/api/groups').then(r => r.json()),
-    ]).then(([todosData, groupsData]) => {
+      fetch('/api/quick-notes').then(r => r.json()),
+    ]).then(([todosData, groupsData, quickNotesData]) => {
       if (Array.isArray(todosData)) setTodos(todosData)
       else console.error('[todos] unexpected response:', todosData)
       if (Array.isArray(groupsData)) setGroups(groupsData)
       else console.error('[groups] unexpected response:', groupsData)
+      if (Array.isArray(quickNotesData)) {
+        const safeQuickNotes: QuickNote[] = quickNotesData
+          .filter((n): n is { id: string; text?: string; completed?: boolean; createdAt?: number } => (
+            typeof n === 'object' && n !== null && typeof (n as { id?: unknown }).id === 'string'
+          ))
+          .map(n => ({
+            id: n.id,
+            text: typeof n.text === 'string' ? n.text : '',
+            completed: Boolean(n.completed),
+            createdAt: typeof n.createdAt === 'number' ? n.createdAt : 0,
+          }))
+        setQuickNotes(safeQuickNotes)
+      } else {
+        console.error('[quick-notes] unexpected response:', quickNotesData)
+      }
     }).catch(console.error)
   }, [])
 
@@ -682,13 +699,6 @@ export default function NotebookTodo() {
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
-  }, [])
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('agendafy-quick-notes')
-      if (stored) setQuickNotes(JSON.parse(stored))
-    } catch { /* ignore */ }
   }, [])
 
   function createGroup(name: string): string {

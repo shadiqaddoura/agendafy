@@ -27,3 +27,4 @@ export function getDb(): Firestore {
 // Collection references
 export const groupsCol = () => getDb().collection('groups')
 export const todosCol = () => getDb().collection('todos')
+export const quickNotesCol = () => getDb().collection('quickNotes')
