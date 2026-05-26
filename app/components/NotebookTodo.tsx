@@ -951,30 +951,6 @@ export default function NotebookTodo() {
           >
             {isMobile ? 'Achievements' : 'Achievement logs'}
           </button>
-          <button
-            onClick={() => setShowQuickNotes(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: isMobile ? 14 : 16,
-              fontFamily: "'Caveat', cursive",
-              color: showQuickNotes ? '#fff' : '#d6e2f0',
-              textDecoration: 'underline',
-              cursor: 'pointer',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <svg width={isMobile ? 14 : 16} height={isMobile ? 14 : 16} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4 L4 17 C4 17.6 4.4 18 5 18 L15 18 C15.6 18 16 17.6 16 17 L16 7 L11 2 L5 2 C4.4 2 4 2.4 4 3 Z" />
-              <path d="M11 2 L11 7 L16 7" />
-              <path d="M7 11 L13 11" />
-              <path d="M7 14 L11 14" />
-            </svg>
-            {isMobile ? 'Notes' : 'Quick notes'}
-          </button>
 
         </div>
       </div>
@@ -1756,7 +1732,7 @@ export default function NotebookTodo() {
         </div>
 
         {/* Right panel — Quick Notes */}
-        {!isMobile && showQuickNotes && (
+        {!isMobile && (
           <div
             style={{
               width: 260,
