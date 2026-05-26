@@ -627,15 +627,12 @@ export default function NotebookTodo() {
   }
 
   function toggleQuickNote(id: string) {
-    setQuickNotes(prev => {
-      const next = prev.map(n => n.id === id ? { ...n, completed: !n.completed } : n)
-      const updated = next.find(n => n.id === id)
-      if (updated) {
-        fetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-          .catch(console.error)
-      }
-      return next
-    })
+    const existing = quickNotes.find(n => n.id === id)
+    if (!existing) return
+    const updated = { ...existing, completed: !existing.completed }
+    setQuickNotes(prev => prev.map(n => n.id === id ? updated : n))
+    fetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      .catch(console.error)
   }
 
   function deleteQuickNote(id: string) {
