@@ -600,13 +600,7 @@ export default function NotebookTodo() {
   const [currentPage, setCurrentPage] = useState(todayStr())
   const [showAchievementLogs, setShowAchievementLogs] = useState(false)
   const [showQuickNotes, setShowQuickNotes] = useState(false)
-  const [quickNotes, setQuickNotes] = useState<QuickNote[]>(() => {
-    if (typeof window === 'undefined') return []
-    try {
-      const stored = localStorage.getItem('agendafy-quick-notes')
-      return stored ? JSON.parse(stored) : []
-    } catch { return [] }
-  })
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([])
   const [quickNoteInput, setQuickNoteInput] = useState('')
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -688,6 +682,13 @@ export default function NotebookTodo() {
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('agendafy-quick-notes')
+      if (stored) setQuickNotes(JSON.parse(stored))
+    } catch { /* ignore */ }
   }, [])
 
   function createGroup(name: string): string {
