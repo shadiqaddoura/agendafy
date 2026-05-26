@@ -1427,6 +1427,143 @@ export default function NotebookTodo() {
             </button>
           </div>
 
+          {isMobile && (
+            <div
+              style={{
+                margin: '10px 12px 0',
+                padding: '12px 12px 10px',
+                border: '1.5px dashed #c4daf5',
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.62)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ fontSize: 22, color: '#3d5a80', lineHeight: 1.1 }}>Quick notes</div>
+                <div style={{ fontSize: 14, color: '#aaa' }}>
+                  {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  ref={quickNoteInputRef}
+                  type="text"
+                  value={quickNoteInput}
+                  onChange={e => setQuickNoteInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addQuickNote()
+                    if (e.key === 'Escape') setQuickNoteInput('')
+                  }}
+                  placeholder="＋  Write a note..."
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    borderBottom: '1.5px dashed #c4daf5',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 19,
+                    fontFamily: "'Caveat', cursive",
+                    color: '#2c3e50',
+                    padding: '2px 0',
+                  }}
+                />
+                <button
+                  onMouseDown={e => { e.preventDefault(); addQuickNote() }}
+                  disabled={!quickNoteInput.trim()}
+                  style={{
+                    background: quickNoteInput.trim() ? '#3d5a80' : '#ccc',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 14,
+                    padding: '3px 12px',
+                    fontSize: 16,
+                    fontFamily: "'Caveat', cursive",
+                    cursor: quickNoteInput.trim() ? 'pointer' : 'not-allowed',
+                    flexShrink: 0,
+                  }}
+                >
+                  + Add
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 210, overflowY: 'auto' }}>
+                {quickNotes.length === 0 ? (
+                  <div style={{ color: '#bbb', fontSize: 17, lineHeight: 1.7, padding: '4px 2px 2px' }}>
+                    No notes yet.
+                  </div>
+                ) : (
+                  quickNotes.map(note => (
+                    <div
+                      key={note.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        padding: '5px 2px',
+                        borderBottom: '1px solid rgba(196,218,245,0.45)',
+                        opacity: note.completed ? 0.55 : 1,
+                      }}
+                    >
+                      <button
+                        onClick={() => toggleQuickNote(note.id)}
+                        title={note.completed ? 'Mark incomplete' : 'Mark complete'}
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: '50%',
+                          border: note.completed ? 'none' : '2px solid #c4daf5',
+                          background: note.completed ? '#6bcb77' : 'transparent',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          marginTop: 3,
+                        }}
+                      >
+                        {note.completed && <IconCheck size={10} />}
+                      </button>
+                      <span
+                        style={{
+                          flex: 1,
+                          fontSize: 19,
+                          color: note.completed ? '#9aa3ad' : '#2c3e50',
+                          textDecorationLine: note.completed ? 'line-through' : 'none',
+                          textDecorationColor: 'rgba(77,184,106,0.5)',
+                          textDecorationThickness: 3,
+                          wordBreak: 'break-word',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {note.text}
+                      </span>
+                      <button
+                        onClick={() => deleteQuickNote(note.id)}
+                        title="Delete note"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#ddd',
+                          padding: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <IconClose size={10} color="currentColor" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Todo list for this page */}
           <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1 }}>
             {pageFilteredTodos.length === 0 && !inlineAddFocused ? (
