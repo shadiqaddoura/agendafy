@@ -24,6 +24,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const note = await req.json()
+    if (typeof note?.id !== 'string' || note.id.trim() === '') {
+      return NextResponse.json({ error: 'Invalid quick note id' }, { status: 400 })
+    }
     await quickNotesCol().doc(note.id).set({
       text: note.text ?? '',
       completed: note.completed ?? false,

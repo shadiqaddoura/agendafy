@@ -606,6 +606,7 @@ export default function NotebookTodo() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const quickNoteInputRef = useRef<HTMLInputElement>(null)
+  const quickNotesRef = useRef<QuickNote[]>([])
   const tagInputRef = useRef<HTMLInputElement>(null)
   const editTagInputRef = useRef<HTMLInputElement>(null)
 
@@ -627,7 +628,7 @@ export default function NotebookTodo() {
   }
 
   function toggleQuickNote(id: string) {
-    const existing = quickNotes.find(n => n.id === id)
+    const existing = quickNotesRef.current.find(n => n.id === id)
     if (!existing) return
     const updated = { ...existing, completed: !existing.completed }
     setQuickNotes(prev => prev.map(n => n.id === id ? updated : n))
@@ -662,6 +663,10 @@ export default function NotebookTodo() {
       return next
     })
   }
+
+  useEffect(() => {
+    quickNotesRef.current = quickNotes
+  }, [quickNotes])
 
   useEffect(() => {
     Promise.all([
