@@ -1754,229 +1754,159 @@ export default function NotebookTodo() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ─── Quick Notes right sheet ─────────────────────────────────────────── */}
-      {showQuickNotes && (
-        <div
-          onClick={() => setShowQuickNotes(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.25)',
-            zIndex: 100,
-          }}
-        />
-      )}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: isMobile ? '100vw' : 400,
-          background: '#fdf8ef',
-          borderLeft: '2px solid #c4daf5',
-          boxShadow: '-6px 0 32px rgba(61,90,128,0.14)',
-          zIndex: 101,
-          display: 'flex',
-          flexDirection: 'column',
-          transform: showQuickNotes ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
-          fontFamily: "'Caveat', cursive",
-        }}
-      >
-        {/* Sheet header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px 12px 20px',
-            borderBottom: '1.5px solid #c4daf5',
-            flexShrink: 0,
-            background: 'rgba(253,248,239,0.98)',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <svg width={22} height={22} viewBox="0 0 20 20" fill="none" stroke="#3d5a80" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4 L4 17 C4 17.6 4.4 18 5 18 L15 18 C15.6 18 16 17.6 16 17 L16 7 L11 2 L5 2 C4.4 2 4 2.4 4 3 Z" />
-                <path d="M11 2 L11 7 L16 7" />
-                <path d="M7 11 L13 11" />
-                <path d="M7 14 L11 14" />
-              </svg>
-              Quick notes
-            </div>
-            <div style={{ fontSize: 15, color: '#aaa', marginTop: 2 }}>
-              {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
-            </div>
-          </div>
-          <button
-            onClick={() => setShowQuickNotes(false)}
+        {/* Right panel — Quick Notes */}
+        {!isMobile && showQuickNotes && (
+          <div
             style={{
-              background: 'none',
-              border: '1.5px solid #c4daf5',
-              borderRadius: 8,
-              padding: '4px 14px',
-              fontSize: 22,
-              fontFamily: "'Caveat', cursive",
-              color: '#3d5a80',
-              cursor: 'pointer',
+              width: 260,
+              flexShrink: 0,
+              overflowY: 'auto',
+              padding: '20px 20px 32px 20px',
+              borderLeft: '1.5px dashed #c4daf5',
               display: 'flex',
-              alignItems: 'center',
-              gap: 6,
+              flexDirection: 'column',
+              gap: 16,
             }}
           >
-            <IconClose size={12} color="#3d5a80" /> Close
-          </button>
-        </div>
-
-        {/* Add note input */}
-        <div
-          style={{
-            padding: '12px 20px',
-            borderBottom: '1.5px solid #c4daf5',
-            flexShrink: 0,
-            background: 'rgba(255,255,255,0.6)',
-          }}
-        >
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              ref={quickNoteInputRef}
-              type="text"
-              value={quickNoteInput}
-              onChange={e => setQuickNoteInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') addQuickNote()
-                if (e.key === 'Escape') setQuickNoteInput('')
-              }}
-              placeholder="＋  Write a note..."
-              style={{
-                flex: 1,
-                border: 'none',
-                borderBottom: '1.5px dashed #c4daf5',
-                outline: 'none',
-                background: 'transparent',
-                fontSize: 22,
-                fontFamily: "'Caveat', cursive",
-                color: '#2c3e50',
-                padding: '4px 0',
-              }}
-            />
-            <button
-              onMouseDown={e => { e.preventDefault(); addQuickNote() }}
-              disabled={!quickNoteInput.trim()}
-              style={{
-                background: quickNoteInput.trim() ? '#3d5a80' : '#ccc',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 20,
-                padding: '5px 16px',
-                fontSize: 19,
-                fontFamily: "'Caveat', cursive",
-                cursor: quickNoteInput.trim() ? 'pointer' : 'not-allowed',
-                transition: 'background 0.2s',
-                flexShrink: 0,
-              }}
-            >
-              + Add
-            </button>
-          </div>
-        </div>
-
-        {/* Notes list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 32px' }}>
-          {quickNotes.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 22, lineHeight: 2 }}>
-              <svg width={48} height={48} viewBox="0 0 20 20" fill="none" stroke="#ddd" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8 }}>
-                <path d="M4 4 L4 17 C4 17.6 4.4 18 5 18 L15 18 C15.6 18 16 17.6 16 17 L16 7 L11 2 L5 2 C4.4 2 4 2.4 4 3 Z" />
-                <path d="M11 2 L11 7 L16 7" />
-                <path d="M7 11 L13 11" />
-                <path d="M7 14 L11 14" />
-              </svg>
-              <div>No notes yet.</div>
-              <div style={{ fontSize: 17 }}>Add one above.</div>
+            {/* Section heading */}
+            <div>
+              <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Quick notes</div>
+              <div style={{ fontSize: 15, color: '#bbb' }}>
+                {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
+              </div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {quickNotes.map(note => (
-                <div
-                  key={note.id}
+
+            {/* Add note input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <input
+                ref={quickNoteInputRef}
+                type="text"
+                value={quickNoteInput}
+                onChange={e => setQuickNoteInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addQuickNote()
+                  if (e.key === 'Escape') setQuickNoteInput('')
+                }}
+                placeholder="＋  Write a note..."
+                style={{
+                  border: 'none',
+                  borderBottom: '1.5px dashed #c4daf5',
+                  outline: 'none',
+                  background: 'transparent',
+                  fontSize: 19,
+                  fontFamily: "'Caveat', cursive",
+                  color: '#2c3e50',
+                  padding: '4px 0',
+                  width: '100%',
+                }}
+              />
+              {quickNoteInput.trim() && (
+                <button
+                  onMouseDown={e => { e.preventDefault(); addQuickNote() }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 6px',
-                    borderBottom: '1px solid rgba(196,218,245,0.5)',
-                    opacity: note.completed ? 0.55 : 1,
-                    transition: 'opacity 0.15s',
+                    background: '#3d5a80',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 16,
+                    padding: '4px 14px',
+                    fontSize: 17,
+                    fontFamily: "'Caveat', cursive",
+                    cursor: 'pointer',
+                    alignSelf: 'flex-start',
                   }}
                 >
-                  {/* Checkbox */}
-                  <button
-                    onClick={() => toggleQuickNote(note.id)}
-                    title={note.completed ? 'Mark incomplete' : 'Mark complete'}
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      border: note.completed ? 'none' : '2px solid #c4daf5',
-                      background: note.completed ? '#6bcb77' : 'transparent',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 0,
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    {note.completed && <IconCheck size={12} />}
-                  </button>
-
-                  {/* Text */}
-                  <span
-                    style={{
-                      flex: 1,
-                      fontSize: 22,
-                      color: note.completed ? '#9aa3ad' : '#2c3e50',
-                      textDecorationLine: note.completed ? 'line-through' : 'none',
-                      textDecorationColor: 'rgba(77,184,106,0.5)',
-                      textDecorationThickness: 3,
-                      wordBreak: 'break-word',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {note.text}
-                  </span>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => deleteQuickNote(note.id)}
-                    title="Delete note"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#ccc',
-                      padding: 4,
-                      display: 'flex',
-                      alignItems: 'center',
-                      flexShrink: 0,
-                      borderRadius: 4,
-                      transition: 'color 0.15s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
-                  >
-                    <IconClose size={11} color="currentColor" />
-                  </button>
-                </div>
-              ))}
+                  + Add
+                </button>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Notes list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {quickNotes.length === 0 ? (
+                <div style={{ color: '#ccc', fontSize: 17, lineHeight: 1.8, paddingTop: 8 }}>
+                  No notes yet.
+                </div>
+              ) : (
+                quickNotes.map(note => (
+                  <div
+                    key={note.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 8,
+                      padding: '6px 4px',
+                      borderBottom: '1px solid rgba(196,218,245,0.5)',
+                      opacity: note.completed ? 0.55 : 1,
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleQuickNote(note.id)}
+                      title={note.completed ? 'Mark incomplete' : 'Mark complete'}
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        border: note.completed ? 'none' : '2px solid #c4daf5',
+                        background: note.completed ? '#6bcb77' : 'transparent',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                        marginTop: 3,
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      {note.completed && <IconCheck size={10} />}
+                    </button>
+
+                    {/* Text */}
+                    <span
+                      style={{
+                        flex: 1,
+                        fontSize: 19,
+                        color: note.completed ? '#9aa3ad' : '#2c3e50',
+                        textDecorationLine: note.completed ? 'line-through' : 'none',
+                        textDecorationColor: 'rgba(77,184,106,0.5)',
+                        textDecorationThickness: 3,
+                        wordBreak: 'break-word',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {note.text}
+                    </span>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => deleteQuickNote(note.id)}
+                      title="Delete note"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#ddd',
+                        padding: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        borderRadius: 4,
+                        transition: 'color 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#ddd')}
+                    >
+                      <IconClose size={10} color="currentColor" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
