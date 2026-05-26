@@ -27,8 +27,11 @@ export async function POST(req: Request) {
     if (typeof note?.id !== 'string' || note.id.trim() === '') {
       return NextResponse.json({ error: 'Invalid quick note id' }, { status: 400 })
     }
+    if (typeof note?.text !== 'string' || note.text.trim() === '') {
+      return NextResponse.json({ error: 'Invalid quick note text' }, { status: 400 })
+    }
     await quickNotesCol().doc(note.id).set({
-      text: note.text ?? '',
+      text: note.text,
       completed: note.completed ?? false,
       createdAt: note.createdAt ?? Date.now(),
     })

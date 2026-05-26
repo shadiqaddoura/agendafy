@@ -8,10 +8,10 @@ export async function PUT(
   try {
     const { id } = await params
     const note = await req.json()
-    await quickNotesCol().doc(id).update({
-      text: note.text ?? '',
-      completed: note.completed ?? false,
-    })
+    const updateData: { text?: string; completed?: boolean } = {}
+    if (typeof note.text === 'string') updateData.text = note.text
+    if (typeof note.completed === 'boolean') updateData.completed = note.completed
+    await quickNotesCol().doc(id).update(updateData)
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[PUT /api/quick-notes/:id]', err)

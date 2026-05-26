@@ -669,31 +669,42 @@ export default function NotebookTodo() {
   }, [quickNotes])
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/todos').then(r => r.json()),
-      fetch('/api/groups').then(r => r.json()),
-      fetch('/api/quick-notes').then(r => r.json()),
-    ]).then(([todosData, groupsData, quickNotesData]) => {
-      if (Array.isArray(todosData)) setTodos(todosData)
-      else console.error('[todos] unexpected response:', todosData)
-      if (Array.isArray(groupsData)) setGroups(groupsData)
-      else console.error('[groups] unexpected response:', groupsData)
-      if (Array.isArray(quickNotesData)) {
-        const safeQuickNotes: QuickNote[] = quickNotesData
-          .filter((n): n is { id: string; text?: string; completed?: boolean; createdAt?: number } => (
-            typeof n === 'object' && n !== null && typeof (n as { id?: unknown }).id === 'string'
-          ))
-          .map(n => ({
-            id: n.id,
-            text: typeof n.text === 'string' ? n.text : '',
-            completed: Boolean(n.completed),
-            createdAt: typeof n.createdAt === 'number' ? n.createdAt : 0,
-          }))
-        setQuickNotes(safeQuickNotes)
-      } else {
-        console.error('[quick-notes] unexpected response:', quickNotesData)
-      }
-    }).catch(console.error)
+    fetch('/api/todos')
+      .then(r => r.json())
+      .then(todosData => {
+        if (Array.isArray(todosData)) setTodos(todosData)
+        else console.error('[todos] unexpected response:', todosData)
+      })
+      .catch(err => console.error('[todos]', err))
+
+    fetch('/api/groups')
+      .then(r => r.json())
+      .then(groupsData => {
+        if (Array.isArray(groupsData)) setGroups(groupsData)
+        else console.error('[groups] unexpected response:', groupsData)
+      })
+      .catch(err => console.error('[groups]', err))
+
+    fetch('/api/quick-notes')
+      .then(r => r.json())
+      .then(quickNotesData => {
+        if (Array.isArray(quickNotesData)) {
+          const safeQuickNotes: QuickNote[] = quickNotesData
+            .filter((n): n is { id: string; text?: string; completed?: boolean; createdAt?: number } => (
+              typeof n === 'object' && n !== null && typeof (n as { id?: unknown }).id === 'string'
+            ))
+            .map(n => ({
+              id: n.id,
+              text: typeof n.text === 'string' ? n.text : '',
+              completed: Boolean(n.completed),
+              createdAt: typeof n.createdAt === 'number' ? n.createdAt : 0,
+            }))
+          setQuickNotes(safeQuickNotes)
+        } else {
+          console.error('[quick-notes] unexpected response:', quickNotesData)
+        }
+      })
+      .catch(err => console.error('[quick-notes]', err))
   }, [])
 
   useEffect(() => {
