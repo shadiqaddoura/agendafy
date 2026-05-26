@@ -21,6 +21,13 @@ import { CSS } from '@dnd-kit/utilities'
 
 type Priority = 'low' | 'medium' | 'high'
 
+type QuickNote = {
+  id: string
+  text: string
+  completed: boolean
+  createdAt: number
+}
+
 type Group = {
   id: string
   name: string
@@ -592,16 +599,51 @@ export default function NotebookTodo() {
   const [inlineAddFocused, setInlineAddFocused] = useState(false)
   const [currentPage, setCurrentPage] = useState(todayStr())
   const [showAchievementLogs, setShowAchievementLogs] = useState(false)
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([])
+  const [quickNoteInput, setQuickNoteInput] = useState('')
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const quickNoteInputRef = useRef<HTMLInputElement>(null)
+  const quickNotesRef = useRef<QuickNote[]>([])
   const tagInputRef = useRef<HTMLInputElement>(null)
   const editTagInputRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
+
+  // ─── Quick Notes helpers ──────────────────────────────────────────────────────
+
+  function addQuickNote() {
+    const text = quickNoteInput.trim()
+    if (!text) return
+    const note: QuickNote = { id: crypto.randomUUID(), text, completed: false, createdAt: Date.now() }
+    setQuickNotes(prev => [note, ...prev])
+    setQuickNoteInput('')
+    quickNoteInputRef.current?.focus()
+    fetch('/api/quick-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note) })
+      .catch(console.error)
+  }
+
+  function toggleQuickNote(id: string) {
+    const existing = quickNotesRef.current.find(n => n.id === id)
+    if (!existing) return
+    const updated = { ...existing, completed: !existing.completed }
+    const nextNotes = quickNotesRef.current.map(n => n.id === id ? updated : n)
+    quickNotesRef.current = nextNotes
+    setQuickNotes(nextNotes)
+    fetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      .catch(console.error)
+  }
+
+  function deleteQuickNote(id: string) {
+    setQuickNotes(prev => prev.filter(n => n.id !== id))
+    fetch(`/api/quick-notes/${id}`, { method: 'DELETE' }).catch(console.error)
+  }
+
+  // ─── Drag ─────────────────────────────────────────────────────────────────────
 
   function handleDragStart(event: DragStartEvent) {
     setActiveDragId(event.active.id as string)
@@ -625,15 +667,46 @@ export default function NotebookTodo() {
   }
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/todos').then(r => r.json()),
-      fetch('/api/groups').then(r => r.json()),
-    ]).then(([todosData, groupsData]) => {
-      if (Array.isArray(todosData)) setTodos(todosData)
-      else console.error('[todos] unexpected response:', todosData)
-      if (Array.isArray(groupsData)) setGroups(groupsData)
-      else console.error('[groups] unexpected response:', groupsData)
-    }).catch(console.error)
+    quickNotesRef.current = quickNotes
+  }, [quickNotes])
+
+  useEffect(() => {
+    fetch('/api/todos')
+      .then(r => r.json())
+      .then(todosData => {
+        if (Array.isArray(todosData)) setTodos(todosData)
+        else console.error('[todos] unexpected response:', todosData)
+      })
+      .catch(err => console.error('[todos]', err))
+
+    fetch('/api/groups')
+      .then(r => r.json())
+      .then(groupsData => {
+        if (Array.isArray(groupsData)) setGroups(groupsData)
+        else console.error('[groups] unexpected response:', groupsData)
+      })
+      .catch(err => console.error('[groups]', err))
+
+    fetch('/api/quick-notes')
+      .then(r => r.json())
+      .then(quickNotesData => {
+        if (Array.isArray(quickNotesData)) {
+          const safeQuickNotes: QuickNote[] = quickNotesData
+            .filter((n): n is { id: string; text?: string; completed?: boolean; createdAt?: number } => (
+              typeof n === 'object' && n !== null && typeof (n as { id?: unknown }).id === 'string'
+            ))
+            .map(n => ({
+              id: n.id,
+              text: typeof n.text === 'string' ? n.text : '',
+              completed: Boolean(n.completed),
+              createdAt: typeof n.createdAt === 'number' ? n.createdAt : 0,
+            }))
+          setQuickNotes(safeQuickNotes)
+        } else {
+          console.error('[quick-notes] unexpected response:', quickNotesData)
+        }
+      })
+      .catch(err => console.error('[quick-notes]', err))
   }, [])
 
   useEffect(() => {
@@ -1372,6 +1445,143 @@ export default function NotebookTodo() {
             </button>
           </div>
 
+          {isMobile && (
+            <div
+              style={{
+                margin: '10px 12px 0',
+                padding: '12px 12px 10px',
+                border: '1.5px dashed #c4daf5',
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.62)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ fontSize: 22, color: '#3d5a80', lineHeight: 1.1 }}>Quick notes</div>
+                <div style={{ fontSize: 14, color: '#aaa' }}>
+                  {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  ref={quickNoteInputRef}
+                  type="text"
+                  value={quickNoteInput}
+                  onChange={e => setQuickNoteInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addQuickNote()
+                    if (e.key === 'Escape') setQuickNoteInput('')
+                  }}
+                  placeholder="＋  Write a note..."
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    borderBottom: '1.5px dashed #c4daf5',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 19,
+                    fontFamily: "'Caveat', cursive",
+                    color: '#2c3e50',
+                    padding: '2px 0',
+                  }}
+                />
+                <button
+                  onMouseDown={e => { e.preventDefault(); addQuickNote() }}
+                  disabled={!quickNoteInput.trim()}
+                  style={{
+                    background: quickNoteInput.trim() ? '#3d5a80' : '#ccc',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 14,
+                    padding: '3px 12px',
+                    fontSize: 16,
+                    fontFamily: "'Caveat', cursive",
+                    cursor: quickNoteInput.trim() ? 'pointer' : 'not-allowed',
+                    flexShrink: 0,
+                  }}
+                >
+                  + Add
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 210, overflowY: 'auto' }}>
+                {quickNotes.length === 0 ? (
+                  <div style={{ color: '#bbb', fontSize: 17, lineHeight: 1.7, padding: '4px 2px 2px' }}>
+                    No notes yet.
+                  </div>
+                ) : (
+                  quickNotes.map(note => (
+                    <div
+                      key={note.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        padding: '5px 2px',
+                        borderBottom: '1px solid rgba(196,218,245,0.45)',
+                        opacity: note.completed ? 0.55 : 1,
+                      }}
+                    >
+                      <button
+                        onClick={() => toggleQuickNote(note.id)}
+                        title={note.completed ? 'Mark incomplete' : 'Mark complete'}
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: '50%',
+                          border: note.completed ? 'none' : '2px solid #c4daf5',
+                          background: note.completed ? '#6bcb77' : 'transparent',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          marginTop: 3,
+                        }}
+                      >
+                        {note.completed && <IconCheck size={10} />}
+                      </button>
+                      <span
+                        style={{
+                          flex: 1,
+                          fontSize: 19,
+                          color: note.completed ? '#9aa3ad' : '#2c3e50',
+                          textDecorationLine: note.completed ? 'line-through' : 'none',
+                          textDecorationColor: 'rgba(77,184,106,0.5)',
+                          textDecorationThickness: 3,
+                          wordBreak: 'break-word',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {note.text}
+                      </span>
+                      <button
+                        onClick={() => deleteQuickNote(note.id)}
+                        title="Delete note"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#ddd',
+                          padding: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <IconClose size={10} color="currentColor" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Todo list for this page */}
           <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1 }}>
             {pageFilteredTodos.length === 0 && !inlineAddFocused ? (
@@ -1683,6 +1893,159 @@ export default function NotebookTodo() {
             </div>
           </div>
         </div>
+
+        {/* Right panel — Quick Notes */}
+        {!isMobile && (
+          <div
+            style={{
+              width: 260,
+              flexShrink: 0,
+              overflowY: 'auto',
+              padding: '20px 20px 32px 20px',
+              borderLeft: '1.5px dashed #c4daf5',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            }}
+          >
+            {/* Section heading */}
+            <div>
+              <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Quick notes</div>
+              <div style={{ fontSize: 15, color: '#bbb' }}>
+                {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
+              </div>
+            </div>
+
+            {/* Add note input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <input
+                ref={quickNoteInputRef}
+                type="text"
+                value={quickNoteInput}
+                onChange={e => setQuickNoteInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addQuickNote()
+                  if (e.key === 'Escape') setQuickNoteInput('')
+                }}
+                placeholder="＋  Write a note..."
+                style={{
+                  border: 'none',
+                  borderBottom: '1.5px dashed #c4daf5',
+                  outline: 'none',
+                  background: 'transparent',
+                  fontSize: 19,
+                  fontFamily: "'Caveat', cursive",
+                  color: '#2c3e50',
+                  padding: '4px 0',
+                  width: '100%',
+                }}
+              />
+              {quickNoteInput.trim() && (
+                <button
+                  onMouseDown={e => { e.preventDefault(); addQuickNote() }}
+                  style={{
+                    background: '#3d5a80',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 16,
+                    padding: '4px 14px',
+                    fontSize: 17,
+                    fontFamily: "'Caveat', cursive",
+                    cursor: 'pointer',
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  + Add
+                </button>
+              )}
+            </div>
+
+            {/* Notes list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {quickNotes.length === 0 ? (
+                <div style={{ color: '#ccc', fontSize: 17, lineHeight: 1.8, paddingTop: 8 }}>
+                  No notes yet.
+                </div>
+              ) : (
+                quickNotes.map(note => (
+                  <div
+                    key={note.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 8,
+                      padding: '6px 4px',
+                      borderBottom: '1px solid rgba(196,218,245,0.5)',
+                      opacity: note.completed ? 0.55 : 1,
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleQuickNote(note.id)}
+                      title={note.completed ? 'Mark incomplete' : 'Mark complete'}
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        border: note.completed ? 'none' : '2px solid #c4daf5',
+                        background: note.completed ? '#6bcb77' : 'transparent',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 0,
+                        marginTop: 3,
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      {note.completed && <IconCheck size={10} />}
+                    </button>
+
+                    {/* Text */}
+                    <span
+                      style={{
+                        flex: 1,
+                        fontSize: 19,
+                        color: note.completed ? '#9aa3ad' : '#2c3e50',
+                        textDecorationLine: note.completed ? 'line-through' : 'none',
+                        textDecorationColor: 'rgba(77,184,106,0.5)',
+                        textDecorationThickness: 3,
+                        wordBreak: 'break-word',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {note.text}
+                    </span>
+
+                    {/* Delete */}
+                    <button
+                      onClick={() => deleteQuickNote(note.id)}
+                      title="Delete note"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#ddd',
+                        padding: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        borderRadius: 4,
+                        transition: 'color 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#ddd')}
+                    >
+                      <IconClose size={10} color="currentColor" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
