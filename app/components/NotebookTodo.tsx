@@ -651,7 +651,20 @@ export default function NotebookTodo() {
     setSigningIn(true)
     setAuthError(null)
     try {
-      await signInWithPopup(auth, createGoogleProvider())
+      const credential = await signInWithPopup(auth, createGoogleProvider())
+      const idToken = await credential.user.getIdToken()
+
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
+
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => ({}))) as { error?: string }
+        await signOut(auth)
+        throw new Error(errorBody.error ?? 'Google sign-in verification failed')
+      }
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Google sign-in failed')
     } finally {
