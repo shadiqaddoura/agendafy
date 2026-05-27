@@ -1022,7 +1022,7 @@ export default function NotebookTodo() {
           minHeight: '100vh',
           display: 'grid',
           placeItems: 'center',
-          background: 'linear-gradient(180deg, #fdf8ef 0%, #f3eee4 100%)',
+          background: 'rgba(253, 248, 239, 0.28)',
           fontFamily: "'Caveat', cursive",
           padding: 20,
         }}
