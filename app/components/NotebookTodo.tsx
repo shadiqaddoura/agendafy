@@ -1027,64 +1027,80 @@ export default function NotebookTodo() {
           padding: 20,
         }}
       >
-        <div
-          style={{
-            width: 'min(92vw, 460px)',
-            background: 'rgba(255,255,255,0.86)',
-            border: '1.5px solid #c4daf5',
-            borderRadius: 16,
-            padding: '28px 26px',
-            boxShadow: '0 12px 40px rgba(41,50,65,0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-            color: '#2c3e50',
-          }}
-        >
-          <div style={{ fontSize: 14, letterSpacing: 3, textTransform: 'uppercase', color: '#8da5bf' }}>Agendafy</div>
-          <h1 style={{ margin: 0, fontSize: 42, lineHeight: 1.05 }}>Sign in to your notebook</h1>
-          <div style={{ fontSize: 23, color: '#7d8ca0' }}>Use Google to continue.</div>
-
-          {authError && (
-            <div style={{ fontSize: 19, color: '#c25555', lineHeight: 1.3, background: 'rgba(239,71,111,0.08)', borderRadius: 10, padding: '8px 10px' }}>
-              {authError}
-            </div>
-          )}
-
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={!auth || signingIn}
+        <div style={{ width: 'min(92vw, 520px)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div
             style={{
-              marginTop: 8,
-              background: signingIn ? '#b5c3d3' : '#3d5a80',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 999,
-              padding: '10px 20px',
-              fontSize: 26,
-              fontFamily: "'Caveat', cursive",
-              cursor: signingIn ? 'not-allowed' : 'pointer',
-              alignSelf: 'flex-start',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 10,
+              padding: '0 4px',
+              color: '#2f496a',
+              textAlign: 'center',
             }}
           >
-            <span
+            <div style={{ fontSize: 38, lineHeight: 1.05 }}>Welcome to Agendfy</div>
+            <div style={{ fontSize: 22, color: '#6e8097', marginTop: 4 }}>
+              A notebook-style daily planner for tasks, quick notes, and goals that keeps your days beautifully organized.
+            </div>
+          </div>
+
+          <div
+            style={{
+              width: 'min(92vw, 460px)',
+              background: 'rgba(255,255,255,0.86)',
+              border: '1.5px solid #c4daf5',
+              borderRadius: 16,
+              padding: '28px 26px',
+              boxShadow: '0 12px 40px rgba(41,50,65,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              color: '#2c3e50',
+              margin: '0 auto',
+            }}
+          >
+            <div style={{ fontSize: 14, letterSpacing: 3, textTransform: 'uppercase', color: '#8da5bf' }}>Agendafy</div>
+            <h1 style={{ margin: 0, fontSize: 42, lineHeight: 1.05 }}>Sign in to your notebook</h1>
+            <div style={{ fontSize: 23, color: '#7d8ca0' }}>Use Google to continue.</div>
+
+            {authError && (
+              <div style={{ fontSize: 19, color: '#c25555', lineHeight: 1.3, background: 'rgba(239,71,111,0.08)', borderRadius: 10, padding: '8px 10px' }}>
+                {authError}
+              </div>
+            )}
+
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={!auth || signingIn}
               style={{
-                width: 26,
-                height: 26,
-                borderRadius: '50%',
-                background: '#fff',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0,
+                marginTop: 8,
+                background: signingIn ? '#b5c3d3' : '#3d5a80',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 999,
+                padding: '10px 20px',
+                fontSize: 26,
+                fontFamily: "'Caveat', cursive",
+                cursor: signingIn ? 'not-allowed' : 'pointer',
+                alignSelf: 'flex-start',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
               }}
             >
-              <IconGoogle size={18} />
-            </span>
-            <span>{signingIn ? 'Signing in...' : 'Continue with Google'}</span>
-          </button>
+              <span
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <IconGoogle size={18} />
+              </span>
+              <span>{signingIn ? 'Signing in...' : 'Continue with Google'}</span>
+            </button>
+          </div>
         </div>
       </div>
     )
