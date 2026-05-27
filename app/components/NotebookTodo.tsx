@@ -835,6 +835,21 @@ export default function NotebookTodo() {
       const data = await res.json()
       if (data.id && data.id !== tempId) {
         setGroups(prev => prev.map(g => g.id === tempId ? { ...g, id: data.id } : g))
+        // Patch any todos whose groupId still references the optimistic tempId
+        setTodos(prev => {
+          const affected = prev.filter(t => t.groupId === tempId)
+          if (!affected.length) return prev
+          const next = prev.map(t => t.groupId === tempId ? { ...t, groupId: data.id } : t)
+          affected.forEach(t => {
+            const updated = next.find(u => u.id === t.id)!
+            authedFetch(`/api/todos/${t.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+              .catch(console.error)
+          })
+          return next
+        })
+        // Patch dropdown state that may still hold the temp ID
+        setInputGroupId(prev => prev === tempId ? data.id : prev)
+        setEditGroupId(prev => prev === tempId ? data.id : prev)
         return data.id
       }
     } catch (err) {
