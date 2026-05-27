@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -18,6 +18,13 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth'
+import { createGoogleProvider, getFirebaseClientAuth } from '@/lib/firebase-client'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -575,6 +582,8 @@ function SortableTodoItem({
 }
 
 export default function NotebookTodo() {
+  const auth = getFirebaseClientAuth()
+  const missingAuthConfig = !auth
   const [todos, setTodos] = useState<Todo[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [inputGroupId, setInputGroupId] = useState<string>('')
@@ -604,6 +613,14 @@ export default function NotebookTodo() {
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [authReady, setAuthReady] = useState(missingAuthConfig)
+  const [authError, setAuthError] = useState<string | null>(
+    missingAuthConfig
+      ? 'Missing Firebase web config. Set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID, and NEXT_PUBLIC_FIREBASE_APP_ID.'
+      : null
+  )
+  const [signingIn, setSigningIn] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const quickNoteInputRef = useRef<HTMLInputElement>(null)
   const quickNotesRef = useRef<QuickNote[]>([])
@@ -614,6 +631,43 @@ export default function NotebookTodo() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
 
+  const authedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (!auth?.currentUser) {
+      throw new Error('Not authenticated')
+    }
+
+    const idToken = await auth.currentUser.getIdToken()
+    const headers = new Headers(init?.headers)
+    headers.set('Authorization', `Bearer ${idToken}`)
+
+    return fetch(input, {
+      ...init,
+      headers,
+    })
+  }, [auth])
+
+  async function handleGoogleSignIn() {
+    if (!auth) return
+    setSigningIn(true)
+    setAuthError(null)
+    try {
+      await signInWithPopup(auth, createGoogleProvider())
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Google sign-in failed')
+    } finally {
+      setSigningIn(false)
+    }
+  }
+
+  async function handleSignOut() {
+    if (!auth) return
+    try {
+      await signOut(auth)
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Failed to sign out')
+    }
+  }
+
   // ─── Quick Notes helpers ──────────────────────────────────────────────────────
 
   function addQuickNote() {
@@ -623,7 +677,7 @@ export default function NotebookTodo() {
     setQuickNotes(prev => [note, ...prev])
     setQuickNoteInput('')
     quickNoteInputRef.current?.focus()
-    fetch('/api/quick-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note) })
+    authedFetch('/api/quick-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note) })
       .catch(console.error)
   }
 
@@ -634,13 +688,13 @@ export default function NotebookTodo() {
     const nextNotes = quickNotesRef.current.map(n => n.id === id ? updated : n)
     quickNotesRef.current = nextNotes
     setQuickNotes(nextNotes)
-    fetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    authedFetch(`/api/quick-notes/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
       .catch(console.error)
   }
 
   function deleteQuickNote(id: string) {
     setQuickNotes(prev => prev.filter(n => n.id !== id))
-    fetch(`/api/quick-notes/${id}`, { method: 'DELETE' }).catch(console.error)
+    authedFetch(`/api/quick-notes/${id}`, { method: 'DELETE' }).catch(console.error)
   }
 
   // ─── Drag ─────────────────────────────────────────────────────────────────────
@@ -657,7 +711,7 @@ export default function NotebookTodo() {
       const oldIdx = prev.findIndex(t => t.id === active.id)
       const newIdx = prev.findIndex(t => t.id === over.id)
       const next = arrayMove(prev, oldIdx, newIdx)
-      fetch('/api/todos/reorder', {
+      authedFetch('/api/todos/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: next.map(t => t.id) }),
@@ -667,47 +721,78 @@ export default function NotebookTodo() {
   }
 
   useEffect(() => {
-    quickNotesRef.current = quickNotes
-  }, [quickNotes])
+    if (!auth) return
+
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser)
+      if (!nextUser) {
+        setTodos([])
+        setGroups([])
+        setQuickNotes([])
+      }
+      setAuthReady(true)
+    })
+
+    return () => unsubscribe()
+  }, [auth])
 
   useEffect(() => {
-    fetch('/api/todos')
-      .then(r => r.json())
-      .then(todosData => {
-        if (Array.isArray(todosData)) setTodos(todosData)
-        else console.error('[todos] unexpected response:', todosData)
-      })
-      .catch(err => console.error('[todos]', err))
+    if (!authReady || !user) return
 
-    fetch('/api/groups')
-      .then(r => r.json())
-      .then(groupsData => {
-        if (Array.isArray(groupsData)) setGroups(groupsData)
-        else console.error('[groups] unexpected response:', groupsData)
-      })
-      .catch(err => console.error('[groups]', err))
+    let isCancelled = false
 
-    fetch('/api/quick-notes')
-      .then(r => r.json())
-      .then(quickNotesData => {
-        if (Array.isArray(quickNotesData)) {
-          const safeQuickNotes: QuickNote[] = quickNotesData
-            .filter((n): n is { id: string; text?: string; completed?: boolean; createdAt?: number } => (
-              typeof n === 'object' && n !== null && typeof (n as { id?: unknown }).id === 'string'
-            ))
-            .map(n => ({
-              id: n.id,
-              text: typeof n.text === 'string' ? n.text : '',
-              completed: Boolean(n.completed),
-              createdAt: typeof n.createdAt === 'number' ? n.createdAt : 0,
-            }))
-          setQuickNotes(safeQuickNotes)
-        } else {
-          console.error('[quick-notes] unexpected response:', quickNotesData)
+    async function loadInitialData() {
+      try {
+        const [todosRes, groupsRes, quickNotesRes] = await Promise.all([
+          authedFetch('/api/todos'),
+          authedFetch('/api/groups'),
+          authedFetch('/api/quick-notes'),
+        ])
+
+        const [todosData, groupsData, quickNotesData] = await Promise.all([
+          todosRes.json(),
+          groupsRes.json(),
+          quickNotesRes.json(),
+        ])
+
+        if (!isCancelled) {
+          if (Array.isArray(todosData)) setTodos(todosData)
+          else console.error('[todos] unexpected response:', todosData)
+
+          if (Array.isArray(groupsData)) setGroups(groupsData)
+          else console.error('[groups] unexpected response:', groupsData)
+
+          if (Array.isArray(quickNotesData)) {
+            const safeQuickNotes: QuickNote[] = quickNotesData
+              .filter((n): n is { id: string; text?: string; completed?: boolean; createdAt?: number } => (
+                typeof n === 'object' && n !== null && typeof (n as { id?: unknown }).id === 'string'
+              ))
+              .map(n => ({
+                id: n.id,
+                text: typeof n.text === 'string' ? n.text : '',
+                completed: Boolean(n.completed),
+                createdAt: typeof n.createdAt === 'number' ? n.createdAt : 0,
+              }))
+            setQuickNotes(safeQuickNotes)
+          } else {
+            console.error('[quick-notes] unexpected response:', quickNotesData)
+          }
         }
-      })
-      .catch(err => console.error('[quick-notes]', err))
-  }, [])
+      } catch (err) {
+        if (!isCancelled) console.error('[initial-load]', err)
+      }
+    }
+
+    loadInitialData()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [authReady, user, authedFetch])
+
+  useEffect(() => {
+    quickNotesRef.current = quickNotes
+  }, [quickNotes])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -721,7 +806,7 @@ export default function NotebookTodo() {
     if (!trimmed) return ''
     const id = crypto.randomUUID()
     setGroups(prev => [...prev, { id, name: trimmed }])
-    fetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, name: trimmed }) })
+    authedFetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, name: trimmed }) })
       .catch(console.error)
     return id
   }
@@ -729,14 +814,14 @@ export default function NotebookTodo() {
   function deleteGroup(id: string) {
     setGroups(prev => prev.filter(g => g.id !== id))
     setTodos(prev => prev.map(t => t.groupId === id ? { ...t, groupId: undefined } : t))
-    fetch(`/api/groups/${id}`, { method: 'DELETE' }).catch(console.error)
+    authedFetch(`/api/groups/${id}`, { method: 'DELETE' }).catch(console.error)
   }
 
   function renameGroup(id: string, name: string) {
     const trimmed = name.trim()
     if (!trimmed) return
     setGroups(prev => prev.map(g => g.id === id ? { ...g, name: trimmed } : g))
-    fetch(`/api/groups/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: trimmed }) })
+    authedFetch(`/api/groups/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: trimmed }) })
       .catch(console.error)
   }
 
@@ -775,7 +860,7 @@ export default function NotebookTodo() {
     setInputTags([])
     setInputTagText('')
     inputRef.current?.focus()
-    fetch('/api/todos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(todo) })
+    authedFetch('/api/todos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(todo) })
       .catch(console.error)
   }
 
@@ -794,7 +879,7 @@ export default function NotebookTodo() {
     setTodos(prev => {
       const next = prev.map(t => (t.id === id ? { ...t, completed: !t.completed } : t))
       const updated = next.find(t => t.id === id)!
-      fetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      authedFetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
         .catch(console.error)
       return next
     })
@@ -802,7 +887,7 @@ export default function NotebookTodo() {
 
   function deleteTodo(id: string) {
     setTodos(prev => prev.filter(t => t.id !== id))
-    fetch(`/api/todos/${id}`, { method: 'DELETE' }).catch(console.error)
+    authedFetch(`/api/todos/${id}`, { method: 'DELETE' }).catch(console.error)
   }
 
   function startEdit(todo: Todo) {
@@ -824,7 +909,7 @@ export default function NotebookTodo() {
     setTodos(prev => {
       const next = prev.map(t => t.id === id ? { ...t, text, date: editDate, priority: editPriority, tags, groupId: editGroupId || undefined } : t)
       const updated = next.find(t => t.id === id)!
-      fetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      authedFetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
         .catch(console.error)
       return next
     })
@@ -840,7 +925,7 @@ export default function NotebookTodo() {
       const next = prev.map(t => idsToRoll.includes(t.id) ? { ...t, date: today } : t)
       idsToRoll.forEach(id => {
         const updated = next.find(t => t.id === id)!
-        fetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+        authedFetch(`/api/todos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
           .catch(console.error)
       })
       return next
@@ -887,6 +972,83 @@ export default function NotebookTodo() {
     .filter(g => pageFilteredTodos.some(t => t.groupId === g.id))
     .map(g => ({ group: g, todos: pageFilteredTodos.filter(t => t.groupId === g.id) }))
   const ungroupedTodos = pageFilteredTodos.filter(t => !t.groupId)
+
+  if (!authReady) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'grid',
+          placeItems: 'center',
+          background: 'linear-gradient(180deg, #fdf8ef 0%, #f3eee4 100%)',
+          fontFamily: "'Caveat', cursive",
+          color: '#3d5a80',
+          fontSize: 34,
+        }}
+      >
+        Preparing your notebook...
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'grid',
+          placeItems: 'center',
+          background: 'linear-gradient(180deg, #fdf8ef 0%, #f3eee4 100%)',
+          fontFamily: "'Caveat', cursive",
+          padding: 20,
+        }}
+      >
+        <div
+          style={{
+            width: 'min(92vw, 460px)',
+            background: 'rgba(255,255,255,0.86)',
+            border: '1.5px solid #c4daf5',
+            borderRadius: 16,
+            padding: '28px 26px',
+            boxShadow: '0 12px 40px rgba(41,50,65,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+            color: '#2c3e50',
+          }}
+        >
+          <div style={{ fontSize: 14, letterSpacing: 3, textTransform: 'uppercase', color: '#8da5bf' }}>Agendafy</div>
+          <h1 style={{ margin: 0, fontSize: 42, lineHeight: 1.05 }}>Sign in to your notebook</h1>
+          <div style={{ fontSize: 23, color: '#7d8ca0' }}>Use Google to continue.</div>
+
+          {authError && (
+            <div style={{ fontSize: 19, color: '#c25555', lineHeight: 1.3, background: 'rgba(239,71,111,0.08)', borderRadius: 10, padding: '8px 10px' }}>
+              {authError}
+            </div>
+          )}
+
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={!auth || signingIn}
+            style={{
+              marginTop: 8,
+              background: signingIn ? '#b5c3d3' : '#3d5a80',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 999,
+              padding: '10px 20px',
+              fontSize: 26,
+              fontFamily: "'Caveat', cursive",
+              cursor: signingIn ? 'not-allowed' : 'pointer',
+              alignSelf: 'flex-start',
+            }}
+          >
+            {signingIn ? 'Signing in...' : 'Continue with Google'}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -941,6 +1103,26 @@ export default function NotebookTodo() {
         )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: isMobile ? 8 : 16, alignItems: 'center' }}>
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, opacity: 0.82 }}>
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.22)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: 15,
+                  lineHeight: 1,
+                }}
+                title={user.displayName ?? user.email ?? 'Signed in user'}
+              >
+                {(user.displayName ?? user.email ?? 'U').charAt(0).toUpperCase()}
+              </div>
+              <span>{user.displayName ?? user.email ?? 'Signed in'}</span>
+            </div>
+          )}
           {isMobile ? (
             <button
               onClick={() => setSidebarOpen(true)}
@@ -962,6 +1144,21 @@ export default function NotebookTodo() {
               {todos.length - completedCount} pending · {completedCount} done
             </div>
           )}
+          <button
+            onClick={handleSignOut}
+            style={{
+              background: 'transparent',
+              border: '1.5px solid rgba(224,224,224,0.5)',
+              borderRadius: 999,
+              padding: isMobile ? '2px 10px' : '3px 12px',
+              fontSize: isMobile ? 14 : 16,
+              fontFamily: "'Caveat', cursive",
+              color: '#e0e0e0',
+              cursor: 'pointer',
+            }}
+          >
+            Sign out
+          </button>
           <button
             onClick={() => setShowAchievementLogs(true)}
             style={{

@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, cert, App } from 'firebase-admin/app'
 import { getFirestore, Firestore } from 'firebase-admin/firestore'
 
-function getFirebaseApp(): App {
+export function getFirebaseApp(): App {
   if (getApps().length > 0) return getApp()
 
   const projectId = process.env.FIREBASE_PROJECT_ID
