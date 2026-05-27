@@ -1031,12 +1031,12 @@ export default function NotebookTodo() {
           <div
             style={{
               padding: '0 4px',
-              color: '#2f496a',
+              color: '#000',
               textAlign: 'center',
             }}
           >
             <div style={{ fontSize: 38, lineHeight: 1.05 }}>Welcome to Agendfy</div>
-            <div style={{ fontSize: 22, color: '#6e8097', marginTop: 4 }}>
+            <div style={{ fontSize: 22, color: '#000', marginTop: 4 }}>
               A notebook-style daily planner for tasks, quick notes, and goals that keeps your days beautifully organized.
             </div>
           </div>
