@@ -825,14 +825,22 @@ export default function NotebookTodo() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  function createGroup(name: string): string {
+  async function createGroup(name: string): Promise<string> {
     const trimmed = name.trim()
     if (!trimmed) return ''
-    const id = crypto.randomUUID()
-    setGroups(prev => [...prev, { id, name: trimmed }])
-    authedFetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, name: trimmed }) })
-      .catch(console.error)
-    return id
+    const tempId = crypto.randomUUID()
+    setGroups(prev => [...prev, { id: tempId, name: trimmed }])
+    try {
+      const res = await authedFetch('/api/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: trimmed }) })
+      const data = await res.json()
+      if (data.id && data.id !== tempId) {
+        setGroups(prev => prev.map(g => g.id === tempId ? { ...g, id: data.id } : g))
+        return data.id
+      }
+    } catch (err) {
+      console.error(err)
+    }
+    return tempId
   }
 
   function deleteGroup(id: string) {
@@ -863,14 +871,15 @@ export default function NotebookTodo() {
     setInputDate(today)
   }
 
-  function addTodo() {
+  async function addTodo() {
     const text = inputText.trim()
     if (!text) return
     const tags = inputTagText.trim()
       ? [...new Set([...inputTags, inputTagText.trim().toLowerCase()])]
       : inputTags
+    const tempId = crypto.randomUUID()
     const todo: Todo = {
-      id: crypto.randomUUID(),
+      id: tempId,
       text,
       completed: false,
       date: inputDate,
@@ -884,8 +893,15 @@ export default function NotebookTodo() {
     setInputTags([])
     setInputTagText('')
     inputRef.current?.focus()
-    authedFetch('/api/todos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(todo) })
-      .catch(console.error)
+    try {
+      const res = await authedFetch('/api/todos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(todo) })
+      const data = await res.json()
+      if (data.id && data.id !== tempId) {
+        setTodos(prev => prev.map(t => t.id === tempId ? { ...t, id: data.id } : t))
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   function commitTag(raw: string) {

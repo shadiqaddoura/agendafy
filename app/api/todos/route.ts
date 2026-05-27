@@ -39,7 +39,9 @@ export async function POST(req: Request) {
       const nextSortOrder = doc.data().sortOrder as number | undefined
       return Math.max(max, nextSortOrder ?? -1)
     }, -1) + 1
-    await todosCol().doc(todo.id).set({
+    // Generate the document ID server-side — never trust a client-supplied ID
+    const docRef = todosCol().doc()
+    await docRef.set({
       userId,
       text: todo.text,
       completed: todo.completed ?? false,
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
       sortOrder,
       createdAt: todo.createdAt ?? Date.now(),
     })
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, id: docRef.id })
   } catch (err) {
     console.error('[POST /api/todos]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })

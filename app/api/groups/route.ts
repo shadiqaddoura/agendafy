@@ -33,8 +33,10 @@ export async function POST(req: Request) {
     }
 
     const group = await req.json()
-    await groupsCol().doc(group.id).set({ name: group.name, userId })
-    return NextResponse.json({ ok: true })
+    // Generate the document ID server-side — never trust a client-supplied ID
+    const docRef = groupsCol().doc()
+    await docRef.set({ name: group.name, userId })
+    return NextResponse.json({ ok: true, id: docRef.id })
   } catch (err) {
     console.error('[POST /api/groups]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
