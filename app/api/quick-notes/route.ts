@@ -35,19 +35,18 @@ export async function POST(req: Request) {
     }
 
     const note = await req.json()
-    if (typeof note?.id !== 'string' || note.id.trim() === '') {
-      return NextResponse.json({ error: 'Invalid quick note id' }, { status: 400 })
-    }
     if (typeof note?.text !== 'string' || note.text.trim() === '') {
       return NextResponse.json({ error: 'Invalid quick note text' }, { status: 400 })
     }
-    await quickNotesCol().doc(note.id).set({
+    // Generate the document ID server-side — never trust a client-supplied ID
+    const docRef = quickNotesCol().doc()
+    await docRef.set({
       userId,
       text: note.text,
       completed: note.completed ?? false,
       createdAt: note.createdAt ?? Date.now(),
     })
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, id: docRef.id })
   } catch (err) {
     console.error('[POST /api/quick-notes]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })

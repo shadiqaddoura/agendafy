@@ -694,15 +694,23 @@ export default function NotebookTodo() {
 
   // ─── Quick Notes helpers ──────────────────────────────────────────────────────
 
-  function addQuickNote() {
+  async function addQuickNote() {
     const text = quickNoteInput.trim()
     if (!text) return
-    const note: QuickNote = { id: crypto.randomUUID(), text, completed: false, createdAt: Date.now() }
+    const tempId = crypto.randomUUID()
+    const note: QuickNote = { id: tempId, text, completed: false, createdAt: Date.now() }
     setQuickNotes(prev => [note, ...prev])
     setQuickNoteInput('')
     quickNoteInputRef.current?.focus()
-    authedFetch('/api/quick-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note) })
-      .catch(console.error)
+    try {
+      const res = await authedFetch('/api/quick-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note) })
+      const data = await res.json()
+      if (data.id && data.id !== tempId) {
+        setQuickNotes(prev => prev.map(n => n.id === tempId ? { ...n, id: data.id } : n))
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   function toggleQuickNote(id: string) {
