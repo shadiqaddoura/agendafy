@@ -20,7 +20,12 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    linear-gradient(rgba(243, 238, 228, 0.58), rgba(243, 238, 228, 0.58)),
+    url('https://images.unsplash.com/photo-1497032205916-ac775f0649ae?auto=format&fit=crop&w=1920&q=80');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
