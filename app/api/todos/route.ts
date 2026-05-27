@@ -64,11 +64,12 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const snapshot = await todosCol().where('userId', '==', userId).get()
+    const snapshot = await todosCol()
+      .where('userId', '==', userId)
+      .where('completed', '==', true)
+      .get()
     const batch = getDb().batch()
-    snapshot.docs.forEach((doc) => {
-      if (doc.data().completed === true) batch.delete(doc.ref)
-    })
+    snapshot.docs.forEach((doc) => batch.delete(doc.ref))
     await batch.commit()
     return NextResponse.json({ ok: true })
   } catch (err) {

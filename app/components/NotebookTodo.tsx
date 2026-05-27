@@ -1035,7 +1035,7 @@ export default function NotebookTodo() {
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 38, lineHeight: 1.05 }}>Welcome to Agendfy</div>
+            <div style={{ fontSize: 38, lineHeight: 1.05 }}>Welcome to Agendafy</div>
             <div style={{ fontSize: 22, color: '#000', marginTop: 4 }}>
               A notebook-style daily planner for tasks, quick notes, and goals that keeps your days beautifully organized.
             </div>

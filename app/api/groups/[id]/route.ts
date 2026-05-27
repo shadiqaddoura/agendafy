@@ -51,11 +51,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const todosSnap = await todosCol().where('userId', '==', userId).get()
+    const todosSnap = await todosCol()
+      .where('userId', '==', userId)
+      .where('groupId', '==', id)
+      .get()
     const batch = getDb().batch()
-    todosSnap.docs.forEach((doc) => {
-      if (doc.data().groupId === id) batch.update(doc.ref, { groupId: null })
-    })
+    todosSnap.docs.forEach((doc) => batch.update(doc.ref, { groupId: null }))
     batch.delete(groupRef)
     await batch.commit()
     return NextResponse.json({ ok: true })
