@@ -189,6 +189,17 @@ function IconArrowRight({ size = 20, color = '#3d5a80' }: { size?: number; color
   )
 }
 
+function IconGoogle({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.3h6.45a5.52 5.52 0 0 1-2.39 3.62v3h3.86c2.26-2.08 3.57-5.15 3.57-8.65Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.86-3c-1.07.72-2.44 1.15-4.09 1.15-3.15 0-5.82-2.13-6.78-5H1.22v3.09A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.22 14.25A7.2 7.2 0 0 1 4.84 12c0-.78.13-1.54.38-2.25V6.66H1.22A12 12 0 0 0 0 12c0 1.94.46 3.78 1.22 5.34l4-3.09Z" />
+      <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.58 1.78l3.43-3.43C17.96 1.19 15.24 0 12 0A12 12 0 0 0 1.22 6.66l4 3.09c.96-2.87 3.63-5 6.78-5Z" />
+    </svg>
+  )
+}
+
 type SortableTodoItemProps = {
   todo: Todo
   editingId: string | null
@@ -1054,9 +1065,25 @@ export default function NotebookTodo() {
               fontFamily: "'Caveat', cursive",
               cursor: signingIn ? 'not-allowed' : 'pointer',
               alignSelf: 'flex-start',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 10,
             }}
           >
-            {signingIn ? 'Signing in...' : 'Continue with Google'}
+            <span
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: '50%',
+                background: '#fff',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <IconGoogle size={18} />
+            </span>
+            <span>{signingIn ? 'Signing in...' : 'Continue with Google'}</span>
           </button>
         </div>
       </div>
