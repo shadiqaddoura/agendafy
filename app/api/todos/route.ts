@@ -34,11 +34,13 @@ export async function POST(req: Request) {
     }
 
     const todo = await req.json()
-    const userTodos = await todosCol().where('userId', '==', userId).get()
-    const sortOrder = userTodos.docs.reduce((max, doc) => {
-      const nextSortOrder = doc.data().sortOrder as number | undefined
-      return Math.max(max, nextSortOrder ?? -1)
-    }, -1) + 1
+    // Single-document query to find the current max sortOrder — avoids a full collection scan
+    const lastSnap = await todosCol()
+      .where('userId', '==', userId)
+      .orderBy('sortOrder', 'desc')
+      .limit(1)
+      .get()
+    const sortOrder = lastSnap.empty ? 0 : ((lastSnap.docs[0].data().sortOrder as number | undefined) ?? 0) + 1
     // Generate the document ID server-side — never trust a client-supplied ID
     const docRef = todosCol().doc()
     await docRef.set({
