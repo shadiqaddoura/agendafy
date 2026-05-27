@@ -10,18 +10,27 @@ export async function POST(req: Request) {
     }
 
     const { ids } = (await req.json()) as { ids: string[] }
-    const batch = getDb().batch()
-    for (const [i, id] of ids.entries()) {
-      const docRef = todosCol().doc(id)
-      const docSnap = await docRef.get()
-      if (!docSnap.exists) {
-        return NextResponse.json({ error: `Todo not found: ${id}` }, { status: 404 })
-      }
-      if (docSnap.data()?.userId !== userId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-      batch.update(docRef, { sortOrder: i })
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ ok: true })
     }
+
+    // Single query to fetch all of this user's todos — one round-trip regardless of list size
+    const snapshot = await todosCol().where('userId', '==', userId).get()
+    const ownedIds = new Set(snapshot.docs.map((doc) => doc.id))
+
+    for (const id of ids) {
+      if (!ownedIds.has(id)) {
+        return NextResponse.json(
+          { error: ownedIds.size === 0 ? `Todo not found: ${id}` : 'Forbidden' },
+          { status: ownedIds.size === 0 ? 404 : 403 }
+        )
+      }
+    }
+
+    const batch = getDb().batch()
+    ids.forEach((id, i) => {
+      batch.update(todosCol().doc(id), { sortOrder: i })
+    })
     await batch.commit()
     return NextResponse.json({ ok: true })
   } catch (err) {
