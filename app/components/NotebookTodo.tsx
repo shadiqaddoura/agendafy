@@ -1945,7 +1945,7 @@ export default function NotebookTodo() {
                     {groupSections.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
                         <IconClipboard size={18} />
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--fg)' }}>Other</span>
+                        <span style={{ fontFamily: 'var(--font-task)', fontSize: 16, color: 'var(--fg)' }}>Other</span>
                       </div>
                     )}
                     <SortableContext items={ungroupedTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
