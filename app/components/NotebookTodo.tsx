@@ -1637,10 +1637,10 @@ export default function NotebookTodo() {
               padding: '12px 24px',
               borderBottom: '1.5px solid var(--border)',
               flexShrink: 0,
-              background: 'rgba(255,255,255,0.88)',
+              background: 'oklch(97% 0.012 80 / 0.95)',
               backdropFilter: 'blur(8px)',
               position: 'sticky',
-              top: isMobile ? 0 : 64,
+              top: 0,
               zIndex: 10,
             }}
           >
