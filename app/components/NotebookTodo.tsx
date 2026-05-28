@@ -635,6 +635,7 @@ export default function NotebookTodo() {
   const inputRef = useRef<HTMLInputElement>(null)
   const quickNoteInputRef = useRef<HTMLInputElement>(null)
   const quickNotesRef = useRef<QuickNote[]>([])
+  const todosRef = useRef<Todo[]>([])
   const tagInputRef = useRef<HTMLInputElement>(null)
   const editTagInputRef = useRef<HTMLInputElement>(null)
 
@@ -827,6 +828,10 @@ export default function NotebookTodo() {
   }, [quickNotes])
 
   useEffect(() => {
+    todosRef.current = todos
+  }, [todos])
+
+  useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
     window.addEventListener('resize', check)
@@ -843,17 +848,17 @@ export default function NotebookTodo() {
       const data = await res.json()
       if (data.id && data.id !== tempId) {
         setGroups(prev => prev.map(g => g.id === tempId ? { ...g, id: data.id } : g))
-        // Patch any todos whose groupId still references the optimistic tempId
+        // Capture affected todos from the ref before calling setTodos so that
+        // the network calls live entirely outside the state updater — updaters
+        // must be pure and are invoked twice in React Strict Mode.
+        const affected = todosRef.current.filter(t => t.groupId === tempId)
         setTodos(prev => {
-          const affected = prev.filter(t => t.groupId === tempId)
           if (!affected.length) return prev
-          const next = prev.map(t => t.groupId === tempId ? { ...t, groupId: data.id } : t)
-          affected.forEach(t => {
-            const updated = next.find(u => u.id === t.id)!
-            authedFetch(`/api/todos/${t.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-              .catch(console.error)
-          })
-          return next
+          return prev.map(t => t.groupId === tempId ? { ...t, groupId: data.id } : t)
+        })
+        affected.forEach(t => {
+          authedFetch(`/api/todos/${t.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...t, groupId: data.id }) })
+            .catch(console.error)
         })
         // Patch dropdown state that may still hold the temp ID
         setInputGroupId(prev => prev === tempId ? data.id : prev)
