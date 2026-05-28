@@ -1508,6 +1508,7 @@ export default function NotebookTodo() {
           style={{
             flex: 1,
             overflowY: 'auto',
+            overscrollBehavior: 'contain',
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
