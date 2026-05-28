@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
+import { Playpen_Sans } from "next/font/google";
 import "./globals.css";
+
+const playpenSans = Playpen_Sans({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-task",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Agendafy — Editorial",
@@ -12,12 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" className={`h-full antialiased ${playpenSans.variable}`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
