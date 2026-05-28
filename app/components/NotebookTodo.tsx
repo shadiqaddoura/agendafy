@@ -285,7 +285,7 @@ function SortableTodoItem({
         background: isDragOverlay ? 'rgba(255,255,255,0.5)' : isEditing ? 'rgba(255,255,255,0.5)' : 'transparent',
         boxShadow: isDragOverlay ? '0 4px 16px rgba(0,0,0,0.08)' : 'none',
       }}
-      onMouseEnter={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'oklch(97% 0.006 80)' }}
+      onMouseEnter={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'var(--bg)' }}
       onMouseLeave={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'transparent' }}
     >
       {/* Main row */}
@@ -478,7 +478,7 @@ function SortableTodoItem({
           gap: 8,
           padding: isMobile ? '6px 12px' : '6px 50px',
           flexWrap: 'wrap',
-          borderBottom: '1px solid rgba(196,218,245,0.6)',
+          borderBottom: '1px solid var(--border)',
           background: 'rgba(255,255,255,0.5)',
         }}
       >
@@ -533,7 +533,7 @@ function SortableTodoItem({
                 {suggestions.map(tag => {
                   const { bg, text } = tagColor(tag)
                   return (
-                    <div key={tag} onMouseDown={e => { e.preventDefault(); onEditTagsChange([...new Set([...editTags, tag])]); onEditTagTextChange(''); onEditTagDropdownToggle(false); editTagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg)' }} onMouseEnter={e => (e.currentTarget.style.background = 'oklch(97% 0.006 80)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <div key={tag} onMouseDown={e => { e.preventDefault(); onEditTagsChange([...new Set([...editTags, tag])]); onEditTagTextChange(''); onEditTagDropdownToggle(false); editTagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <span style={{ background: bg, color: text, borderRadius: 2, padding: '1px 8px', fontSize: 13 }}>#{tag}</span>
                     </div>
                   )
@@ -1872,7 +1872,7 @@ export default function NotebookTodo() {
               >
                 {groupSections.map(group => (
                   <div key={group.group.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid var(--border)', marginBottom: 2 }}>
                       <IconFolder size={18} color="var(--fg)" />
                       <span style={{ fontFamily: 'var(--font-task)', fontSize: 16, fontWeight: 'bold', color: 'var(--fg)' }}>{group.group.name}</span>
                       <span style={{ fontSize: 14, color: 'var(--muted)', marginLeft: 2 }}>({group.todos.length})</span>
@@ -1917,7 +1917,7 @@ export default function NotebookTodo() {
                 {ungroupedTodos.length > 0 && (
                   <>
                     {groupSections.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid var(--border)', marginBottom: 2 }}>
                         <IconClipboard size={18} />
                         <span style={{ fontFamily: 'var(--font-task)', fontSize: 16, fontWeight: 'bold', color: 'var(--fg)' }}>Other</span>
                       </div>
@@ -2019,7 +2019,7 @@ export default function NotebookTodo() {
                   alignItems: 'center',
                   gap: 10,
                   padding: '8px 4px',
-                  borderBottom: '1px solid rgba(196,218,245,0.6)',
+                  borderBottom: '1px solid var(--border)',
                   cursor: 'text',
                 }}
                 onClick={() => inputRef.current?.focus()}
@@ -2070,7 +2070,7 @@ export default function NotebookTodo() {
                     gap: 8,
                     padding: isMobile ? '6px 12px' : '6px 50px',
                     flexWrap: 'wrap',
-                    borderBottom: '1px solid rgba(196,218,245,0.6)',
+                    borderBottom: '1px solid var(--border)',
                   }}
                 >
                   {/* Tag chips */}
@@ -2111,7 +2111,7 @@ export default function NotebookTodo() {
                           {suggestions.map(tag => {
                             const { bg, text } = tagColor(tag)
                             return (
-                              <div key={tag} onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg)' }} onMouseEnter={e => (e.currentTarget.style.background = 'oklch(97% 0.006 80)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                              <div key={tag} onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg)' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                 <span style={{ background: bg, color: text, borderRadius: 2, padding: '1px 8px', fontSize: 13 }}>#{tag}</span>
                                 <span style={{ color: 'var(--border)', fontSize: 13 }}>{todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}</span>
                               </div>
