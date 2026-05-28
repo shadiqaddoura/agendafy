@@ -359,8 +359,8 @@ function SortableTodoItem({
             borderBottom: '2px solid var(--fg)',
             outline: 'none',
             background: 'transparent',
-            fontSize: 20,
-            fontFamily: 'var(--font-display)',
+            fontSize: 16,
+            fontFamily: 'var(--font-task)',
             color: 'var(--fg)',
           }}
         />
@@ -371,8 +371,8 @@ function SortableTodoItem({
           style={{
             flex: 1,
             minWidth: 0,
-            fontFamily: 'var(--font-display)',
-            fontSize: 20,
+            fontFamily: 'var(--font-task)',
+            fontSize: 16,
             color: todo.completed ? 'var(--muted)' : 'var(--fg)',
             cursor: todo.completed ? 'default' : 'text',
             wordBreak: 'break-word',
