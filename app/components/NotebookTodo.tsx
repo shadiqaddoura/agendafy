@@ -1564,7 +1564,7 @@ export default function NotebookTodo() {
                           <div key={todo.id}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
                               <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                              <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--muted)', textDecorationLine: 'line-through', textDecorationColor: 'rgba(107,203,119,0.5)', textDecorationThickness: 2, wordBreak: 'break-word' }}>
+                              <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-task)', fontSize: 14, color: 'var(--muted)', textDecorationLine: 'line-through', textDecorationColor: 'rgba(107,203,119,0.5)', textDecorationThickness: 2, wordBreak: 'break-word' }}>
                                 {todo.text}
                               </span>
                               {!isMobile && todo.tags.length > 0 && (
