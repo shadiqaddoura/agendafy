@@ -140,7 +140,7 @@ function IconFolder({ size = 17, color = 'currentColor' }: { size?: number; colo
 
 function IconNotebook({ size = 56 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 56 56" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 56 56" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M10 6 C9 6 8 7 8 8 L8 48 C8 49 9 50 10 50 L46 50 C47 50 48 49 48 48 L48 8 C48 7 47 6 46 6 Z" />
       <path d="M17 6 L17 50" />
       <path d="M23 18 L42 18" />
@@ -155,7 +155,7 @@ function IconNotebook({ size = 56 }: { size?: number }) {
 
 function IconTag({ size = 48 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="#bbb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 5 L5 23 C5 24.5 5.5 25.5 6.5 26.5 L26 46 C27.5 47.5 30 47.5 31.5 46 L46 31.5 C47.5 30 47.5 27.5 46 26 L26.5 6.5 C25.5 5.5 24.5 5 23 5 Z" />
       <circle cx="14" cy="14" r="3" />
     </svg>
@@ -164,7 +164,7 @@ function IconTag({ size = 48 }: { size?: number }) {
 
 function IconClipboard({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 20 22" fill="none" stroke="#aaa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M7 4 L3 4 C2.5 4 2 4.5 2 5 L2 20 C2 20.5 2.5 21 3 21 L17 21 C17.5 21 18 20.5 18 20 L18 5 C18 4.5 17.5 4 17 4 L13 4" />
       <path d="M7 1.5 C7 1 7.5 1 8 1 L12 1 C12.5 1 13 1 13 1.5 L13 4 L7 4 Z" />
       <path d="M6 11 L14 11" />
@@ -173,7 +173,7 @@ function IconClipboard({ size = 18 }: { size?: number }) {
   )
 }
 
-function IconArrowLeft({ size = 20, color = '#3d5a80' }: { size?: number; color?: string }) {
+function IconArrowLeft({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M13.5 4 C11 6.5 8 10 6.5 10 C8 10 11 13.5 13.5 16" />
@@ -181,7 +181,7 @@ function IconArrowLeft({ size = 20, color = '#3d5a80' }: { size?: number; color?
   )
 }
 
-function IconArrowRight({ size = 20, color = '#3d5a80' }: { size?: number; color?: string }) {
+function IconArrowRight({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6.5 4 C9 6.5 12 10 13.5 10 C12 10 9 13.5 6.5 16" />
@@ -281,23 +281,23 @@ function SortableTodoItem({
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.3 : 1,
-        borderRadius: 6,
-        background: isDragOverlay ? 'rgba(61,90,128,0.08)' : isEditing ? 'rgba(255,255,255,0.7)' : 'transparent',
-        boxShadow: isDragOverlay ? '0 4px 16px rgba(0,0,0,0.12)' : isEditing ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+        borderRadius: 0,
+        background: isDragOverlay ? 'rgba(255,255,255,0.5)' : isEditing ? 'rgba(255,255,255,0.5)' : 'transparent',
+        boxShadow: isDragOverlay ? '0 4px 16px rgba(0,0,0,0.08)' : 'none',
       }}
-      onMouseEnter={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'rgba(61,90,128,0.06)' }}
+      onMouseEnter={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'oklch(97% 0.006 80)' }}
       onMouseLeave={e => { if (!isDragOverlay && !isEditing) e.currentTarget.style.background = 'transparent' }}
     >
       {/* Main row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px', cursor: 'default' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '6px 6px', cursor: 'default', borderBottom: '1px solid var(--border)' }}>
       {/* Drag handle */}
       <div
         {...attributes}
         {...listeners}
         style={{
           cursor: isDragging ? 'grabbing' : 'grab',
-          color: '#ccc',
-          fontSize: 16,
+          color: 'var(--border)',
+          fontSize: 14,
           flexShrink: 0,
           lineHeight: 1,
           padding: '0 2px',
@@ -356,12 +356,12 @@ function SortableTodoItem({
           style={{
             flex: 1,
             border: 'none',
-            borderBottom: '2px solid #3d5a80',
+            borderBottom: '2px solid var(--fg)',
             outline: 'none',
             background: 'transparent',
-            fontSize: 24,
-            fontFamily: "'Caveat', cursive",
-            color: '#2c3e50',
+            fontSize: 20,
+            fontFamily: 'var(--font-display)',
+            color: 'var(--fg)',
           }}
         />
       ) : (
@@ -371,14 +371,15 @@ function SortableTodoItem({
           style={{
             flex: 1,
             minWidth: 0,
-            fontSize: 24,
-            color: todo.completed ? '#bbb' : '#2c3e50',
+            fontFamily: 'var(--font-display)',
+            fontSize: 20,
+            color: todo.completed ? 'var(--muted)' : 'var(--fg)',
             cursor: todo.completed ? 'default' : 'text',
             wordBreak: 'break-word',
             transition: 'color 0.2s',
             textDecorationLine: todo.completed ? 'line-through' : 'none',
-            textDecorationColor: 'rgba(77, 184, 106, 0.5)',
-            textDecorationThickness: 3,
+            textDecorationColor: 'rgba(107,203,119,0.5)',
+            textDecorationThickness: 2,
           }}
         >
           {todo.text}
@@ -398,9 +399,9 @@ function SortableTodoItem({
                 style={{
                   background: bg,
                   color: text,
-                  borderRadius: 10,
+                  borderRadius: 2,
                   padding: '1px 7px',
-                  fontSize: 15,
+                  fontSize: 13,
                   cursor: 'pointer',
                   opacity: todo.completed ? 0.5 : 1,
                   border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
@@ -417,8 +418,8 @@ function SortableTodoItem({
       {!isEditing && !isMobile && todo.groupId && (() => {
         const g = groups.find(g => g.id === todo.groupId)
         return g ? (
-          <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <IconFolder size={13} color="#bbb" /> {g.name}
+          <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <IconFolder size={13} color="var(--border)" /> {g.name}
             </span>
         ) : null
       })()}
@@ -432,15 +433,15 @@ function SortableTodoItem({
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: '#ccc',
-            fontSize: 20,
+            color: 'var(--border)',
+            fontSize: 14,
             flexShrink: 0,
             lineHeight: 1,
             padding: '0 4px',
             transition: 'color 0.15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#ccc')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--high)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--border)')}
         >
           <IconClose size={10} />
         </button>
@@ -460,9 +461,9 @@ function SortableTodoItem({
               style={{
                 background: bg,
                 color: text,
-                borderRadius: 10,
+                borderRadius: 2,
                 padding: '1px 7px',
-                fontSize: 15,
+                fontSize: 13,
                 cursor: 'pointer',
                 opacity: todo.completed ? 0.5 : 1,
                 border: activeTagFilter === tag ? `1.5px solid ${text}` : '1.5px solid transparent',
@@ -476,8 +477,8 @@ function SortableTodoItem({
         {todo.groupId && (() => {
           const g = groups.find(g => g.id === todo.groupId)
           return g ? (
-            <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <IconFolder size={13} color="#bbb" /> {g.name}
+            <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <IconFolder size={13} color="var(--border)" /> {g.name}
             </span>
           ) : null
         })()}
@@ -494,14 +495,14 @@ function SortableTodoItem({
           padding: isMobile ? '6px 12px' : '6px 50px',
           flexWrap: 'wrap',
           borderBottom: '1px solid rgba(196,218,245,0.6)',
-          background: 'rgba(255,255,255,0.6)',
+          background: 'rgba(255,255,255,0.5)',
         }}
       >
         {/* Tag chips */}
         {editTags.map(tag => {
           const { bg, text } = tagColor(tag)
           return (
-            <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 18, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '2px 8px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
               #{tag}
               <button onMouseDown={e => { e.preventDefault(); onEditTagsChange(editTags.filter(t => t !== tag)) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 14, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
             </span>
@@ -536,20 +537,20 @@ function SortableTodoItem({
               }
             }}
             placeholder="# tag..."
-            style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#888', width: 70 }}
+            style={{ border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--muted)', width: 70 }}
           />
           {editTagDropdownOpen && (() => {
             const query = editTagText.trim().toLowerCase()
             const suggestions = allTags.filter(t => !editTags.includes(t) && (query === '' || t.includes(query)))
             if (suggestions.length === 0) return null
             return (
-              <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1.5px solid #c4daf5', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
-                <div style={{ padding: '4px 10px', fontSize: 11, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>Existing tags</div>
+              <div style={{ position: 'absolute', top: '100%', left: 0, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 2, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
+                <div style={{ padding: '4px 10px', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.15em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>Existing tags</div>
                 {suggestions.map(tag => {
                   const { bg, text } = tagColor(tag)
                   return (
-                    <div key={tag} onMouseDown={e => { e.preventDefault(); onEditTagsChange([...new Set([...editTags, tag])]); onEditTagTextChange(''); onEditTagDropdownToggle(false); editTagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 16, fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 8, color: '#444' }} onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 14 }}>#{tag}</span>
+                    <div key={tag} onMouseDown={e => { e.preventDefault(); onEditTagsChange([...new Set([...editTags, tag])]); onEditTagTextChange(''); onEditTagDropdownToggle(false); editTagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg)' }} onMouseEnter={e => (e.currentTarget.style.background = 'oklch(97% 0.006 80)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <span style={{ background: bg, color: text, borderRadius: 2, padding: '1px 8px', fontSize: 13 }}>#{tag}</span>
                     </div>
                   )
                 })}
@@ -559,12 +560,12 @@ function SortableTodoItem({
         </div>
 
         {/* Date */}
-        <input type="date" value={editDate} onChange={e => onEditDateChange(e.target.value)} style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer' }} />
+        <input type="date" value={editDate} onChange={e => onEditDateChange(e.target.value)} style={{ border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--muted)', padding: '2px 4px', cursor: 'pointer' }} />
 
         {/* Priority dots */}
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {(['low', 'medium', 'high'] as Priority[]).map(p => (
-            <button key={p} onMouseDown={e => { e.preventDefault(); onEditPriorityChange(p) }} title={PRIORITY_LABELS[p]} style={{ width: 16, height: 16, borderRadius: '50%', border: editPriority === p ? '2.5px solid #333' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: editPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }} />
+            <button key={p} onMouseDown={e => { e.preventDefault(); onEditPriorityChange(p) }} title={PRIORITY_LABELS[p]} style={{ width: 16, height: 16, borderRadius: '50%', border: editPriority === p ? '2.5px solid var(--fg)' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: editPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }} />
           ))}
         </div>
 
@@ -573,17 +574,17 @@ function SortableTodoItem({
           value={editGroupId}
           onMouseDown={e => e.stopPropagation()}
           onChange={e => onEditGroupChange(e.target.value)}
-          style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 15, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
+          style={{ border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--muted)', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
         >
           <option value="">No group</option>
           {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
 
         {/* Save / Cancel */}
-        <button onMouseDown={e => { e.preventDefault(); onSaveEdit(todo.id) }} disabled={!editText.trim()} style={{ marginLeft: 'auto', background: editText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 17, fontFamily: "'Caveat', cursive", cursor: editText.trim() ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+        <button onMouseDown={e => { e.preventDefault(); onSaveEdit(todo.id) }} disabled={!editText.trim()} style={{ marginLeft: 'auto', background: 'var(--fg)', color: 'var(--surface)', border: 'none', borderRadius: 2, padding: '6px 20px', fontSize: 15, fontFamily: 'var(--font-body)', cursor: editText.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, opacity: editText.trim() ? 1 : 0.4 }}>
           Save
         </button>
-        <button onMouseDown={e => { e.preventDefault(); onCancelEdit() }} style={{ background: 'none', border: '1.5px solid #ccc', borderRadius: 20, padding: '5px 14px', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#aaa', cursor: 'pointer', flexShrink: 0 }}>
+        <button onMouseDown={e => { e.preventDefault(); onCancelEdit() }} style={{ background: 'none', border: '1.5px solid var(--border)', borderRadius: 2, padding: '5px 14px', fontSize: 15, fontFamily: 'var(--font-body)', color: 'var(--muted)', cursor: 'pointer', flexShrink: 0 }}>
           Cancel
         </button>
       </div>
@@ -1048,9 +1049,9 @@ export default function NotebookTodo() {
           minHeight: '100vh',
           display: 'grid',
           placeItems: 'center',
-          background: 'linear-gradient(180deg, #fdf8ef 0%, #f3eee4 100%)',
-          fontFamily: "'Caveat', cursive",
-          color: '#3d5a80',
+          background: 'linear-gradient(180deg, var(--bg), oklch(95% 0.015 80))',
+          fontFamily: 'var(--font-display)',
+          color: 'var(--fg)',
           fontSize: 34,
         }}
       >
@@ -1066,21 +1067,21 @@ export default function NotebookTodo() {
           minHeight: '100vh',
           display: 'grid',
           placeItems: 'center',
-          background: 'rgba(253, 248, 239, 0.28)',
-          fontFamily: "'Caveat', cursive",
-          padding: 20,
+          background: 'var(--bg)',
+          fontFamily: 'var(--font-body)',
+          padding: '80px 20px',
         }}
       >
-        <div style={{ width: 'min(92vw, 520px)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ width: 'min(92vw, 520px)', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div
             style={{
               padding: '0 4px',
-              color: '#000',
+              color: 'var(--fg)',
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 38, lineHeight: 1.05 }}>Welcome to Agendafy</div>
-            <div style={{ fontSize: 22, color: '#000', marginTop: 4 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 38, lineHeight: 1.05, color: 'var(--fg)' }}>Welcome to Agendafy</div>
+            <div style={{ fontSize: 20, color: 'var(--muted)', marginTop: 4 }}>
               A notebook-style daily planner for tasks, quick notes, and goals that keeps your days beautifully organized.
             </div>
           </div>
@@ -1088,24 +1089,24 @@ export default function NotebookTodo() {
           <div
             style={{
               width: 'min(92vw, 460px)',
-              background: 'rgba(255,255,255,0.86)',
-              border: '1.5px solid #c4daf5',
-              borderRadius: 16,
+              background: 'var(--surface)',
+              border: '1.5px solid var(--border)',
+              borderRadius: 2,
               padding: '28px 26px',
-              boxShadow: '0 12px 40px rgba(41,50,65,0.08)',
+              boxShadow: 'none',
               display: 'flex',
               flexDirection: 'column',
               gap: 14,
-              color: '#2c3e50',
+              color: 'var(--fg)',
               margin: '0 auto',
             }}
           >
-            <div style={{ fontSize: 14, letterSpacing: 3, textTransform: 'uppercase', color: '#8da5bf' }}>Agendafy</div>
-            <h1 style={{ margin: 0, fontSize: 42, lineHeight: 1.05 }}>Sign in to your notebook</h1>
-            <div style={{ fontSize: 23, color: '#7d8ca0' }}>Use Google to continue.</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--muted)' }}>Agendafy</div>
+            <h1 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 400, lineHeight: 1.05 }}>Sign in to your notebook</h1>
+            <div style={{ fontSize: 20, color: 'var(--muted)' }}>Use Google to continue.</div>
 
             {authError && (
-              <div style={{ fontSize: 19, color: '#c25555', lineHeight: 1.3, background: 'rgba(239,71,111,0.08)', borderRadius: 10, padding: '8px 10px' }}>
+              <div style={{ fontSize: 19, color: '#c25555', lineHeight: 1.3, background: 'rgba(239,71,111,0.08)', borderRadius: 2, padding: '8px 10px' }}>
                 {authError}
               </div>
             )}
@@ -1115,18 +1116,19 @@ export default function NotebookTodo() {
               disabled={!auth || signingIn}
               style={{
                 marginTop: 8,
-                background: signingIn ? '#b5c3d3' : '#3d5a80',
-                color: '#fff',
+                background: 'var(--fg)',
+                color: 'var(--surface)',
                 border: 'none',
-                borderRadius: 999,
+                borderRadius: 2,
                 padding: '10px 20px',
-                fontSize: 26,
-                fontFamily: "'Caveat', cursive",
+                fontSize: 22,
+                fontFamily: 'var(--font-display)',
                 cursor: signingIn ? 'not-allowed' : 'pointer',
                 alignSelf: 'flex-start',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 10,
+                opacity: signingIn ? 0.4 : 1,
               }}
             >
               <span
@@ -1157,70 +1159,60 @@ export default function NotebookTodo() {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        fontFamily: "'Caveat', cursive",
+        fontFamily: 'var(--font-body)',
       }}
     >
 
       {/* Cover / Header */}
       <div
         style={{
-          background: 'linear-gradient(180deg, #3d5a80 0%, #293241 100%)',
-          padding: isMobile ? '12px 16px 10px 16px' : '20px 32px 16px 72px',
-          color: '#e0e0e0',
-          position: 'relative',
-          overflow: 'hidden',
+          background: 'var(--fg)',
+          color: 'var(--surface)',
+          height: 64,
+          padding: '0 24px',
+          position: isMobile ? 'relative' : 'sticky',
+          top: 0,
           flexShrink: 0,
-          zIndex: 2,
+          zIndex: 20,
           display: 'flex',
           alignItems: 'center',
-          gap: isMobile ? 8 : 32,
+          gap: 20,
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            right: -40,
-            top: -40,
-            width: 220,
-            height: 220,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.04)',
-            pointerEvents: 'none',
-          }}
-        />
         <div>
-          <div style={{ fontSize: 12, letterSpacing: 4, textTransform: 'uppercase', opacity: 0.6, marginBottom: 2 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 2 }}>
             Agenda
           </div>
-          <h1 style={{ fontSize: 36, fontWeight: 'bold', margin: 0, lineHeight: 1.1, letterSpacing: 1 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400, margin: 0, lineHeight: 1.1, letterSpacing: '-0.01em' }}>
             Agendafy
           </h1>
         </div>
         {!isMobile && (
-          <div style={{ opacity: 0.5, fontSize: 17 }}>
+          <div style={{ opacity: 0.5, fontSize: 15, fontFamily: 'var(--font-body)' }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
         )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: isMobile ? 8 : 16, alignItems: 'center' }}>
           {!isMobile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, opacity: 0.82 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div
                 style={{
                   width: 26,
                   height: 26,
                   borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.22)',
+                  background: 'rgba(255,255,255,0.18)',
                   display: 'grid',
                   placeItems: 'center',
-                  fontSize: 15,
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 13,
                   lineHeight: 1,
                 }}
                 title={user.displayName ?? user.email ?? 'Signed in user'}
               >
                 {(user.displayName ?? user.email ?? 'U').charAt(0).toUpperCase()}
               </div>
-              <span>{user.displayName ?? user.email ?? 'Signed in'}</span>
+              <span style={{ fontSize: 15, opacity: 0.82 }}>{user.displayName ?? user.email ?? 'Signed in'}</span>
             </div>
           )}
           {isMobile ? (
@@ -1228,19 +1220,19 @@ export default function NotebookTodo() {
               onClick={() => setSidebarOpen(true)}
               title="Show sidebar"
               style={{
-                background: 'rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.12)',
                 border: 'none',
-                borderRadius: 8,
-                padding: '4px 12px',
+                borderRadius: 2,
+                padding: '6px 12px',
                 fontSize: 20,
-                color: '#e0e0e0',
+                color: 'var(--surface)',
                 cursor: 'pointer',
               }}
             >
               ☰
             </button>
           ) : (
-            <div style={{ fontSize: 17, opacity: 0.6 }}>
+            <div style={{ fontSize: 15, opacity: 0.55 }}>
               {todos.length - completedCount} pending · {completedCount} done
             </div>
           )}
@@ -1248,12 +1240,12 @@ export default function NotebookTodo() {
             onClick={handleSignOut}
             style={{
               background: 'transparent',
-              border: '1.5px solid rgba(224,224,224,0.5)',
-              borderRadius: 999,
-              padding: isMobile ? '2px 10px' : '3px 12px',
-              fontSize: isMobile ? 14 : 16,
-              fontFamily: "'Caveat', cursive",
-              color: '#e0e0e0',
+              border: '1.5px solid rgba(224,224,224,0.4)',
+              borderRadius: 2,
+              padding: '6px 18px',
+              fontSize: 14,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--surface)',
               cursor: 'pointer',
             }}
           >
@@ -1264,9 +1256,9 @@ export default function NotebookTodo() {
             style={{
               background: 'none',
               border: 'none',
-              fontSize: isMobile ? 14 : 16,
-              fontFamily: "'Caveat', cursive",
-              color: showAchievementLogs ? '#fff' : '#d6e2f0',
+              fontSize: 14,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--border)',
               textDecoration: 'underline',
               cursor: 'pointer',
               padding: 0,
@@ -1285,36 +1277,34 @@ export default function NotebookTodo() {
           display: 'flex',
           overflow: 'hidden',
           position: 'relative',
-          background: '#fdf8ef',
-          backgroundImage: `
-            repeating-linear-gradient(
-              transparent,
-              transparent 31px,
-              #c4daf5 31px,
-              #c4daf5 32px
-            )
-          `,
-          backgroundPositionY: 8,
+          background: 'var(--bg)',
         }}
       >
         {/* Binding column */}
         {!isMobile && (
           <div
             style={{
-              width: 52,
+              width: 48,
               flexShrink: 0,
-              background: 'linear-gradient(90deg, #e8ddd0 0%, #f0ebe0 100%)',
-              borderRight: '2px solid #f4a0a0',
+              background: 'linear-gradient(90deg, oklch(92% 0.015 75), oklch(96% 0.01 80))',
+              borderRight: '2px solid var(--spine)',
               zIndex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-          />
+          >
+            <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.3em', color: 'var(--muted)', opacity: 0.4 }}>
+              Agendafy — Editorial
+            </div>
+          </div>
         )}
 
         {/* Left panel backdrop (mobile) */}
         {isMobile && sidebarOpen && (
           <div
             onClick={() => setSidebarOpen(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 49 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 49 }}
           />
         )}
 
@@ -1327,13 +1317,13 @@ export default function NotebookTodo() {
             bottom: isMobile ? 0 : undefined,
             zIndex: isMobile ? 50 : undefined,
             boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.15)' : undefined,
-            background: isMobile ? '#fdf8ef' : undefined,
+            background: 'var(--surface)',
             width: isMobile ? '80vw' : 260,
             maxWidth: isMobile ? 320 : undefined,
             flexShrink: 0,
             overflowY: 'auto',
             padding: '20px 24px 32px 20px',
-            borderRight: '1.5px dashed #c4daf5',
+            borderRight: '1.5px dashed var(--border)',
             display: isMobile ? (sidebarOpen ? 'flex' : 'none') : 'flex',
             flexDirection: 'column',
             gap: 24,
@@ -1343,7 +1333,7 @@ export default function NotebookTodo() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -8 }}>
               <button
                 onClick={() => setSidebarOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 18, padding: '4px 8px', fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 14, padding: '4px 8px', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <IconClose size={11} /> Close
               </button>
@@ -1352,20 +1342,20 @@ export default function NotebookTodo() {
           {/* Stats */}
           <div
             style={{
-              background: 'rgba(61,90,128,0.06)',
-              borderRadius: 10,
+              background: 'oklch(97% 0.01 80)',
+              borderRadius: 2,
               padding: '14px 16px',
               display: 'flex',
               flexDirection: 'column',
               gap: 8,
             }}
           >
-            <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Progress</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>PROGRESS</div>
             <div
               style={{
-                height: 8,
-                borderRadius: 4,
-                background: '#e0e0e0',
+                height: 6,
+                borderRadius: 0,
+                background: 'var(--border)',
                 overflow: 'hidden',
               }}
             >
@@ -1373,15 +1363,15 @@ export default function NotebookTodo() {
                 style={{
                   height: '100%',
                   width: todos.length > 0 ? `${Math.round((completedCount / todos.length) * 100)}%` : '0%',
-                  background: 'linear-gradient(90deg, #3d5a80, #6bcb77)',
-                  borderRadius: 4,
+                  background: 'var(--accent)',
+                  borderRadius: 0,
                   transition: 'width 0.4s ease',
                 }}
               />
             </div>
-            <div style={{ fontSize: 17, color: '#888', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 14, color: 'var(--muted)', display: 'flex', justifyContent: 'space-between' }}>
               <span>{todos.length - completedCount} remaining</span>
-              <span style={{ color: '#6bcb77' }}>
+              <span style={{ color: 'var(--success)' }}>
                 {todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0}%
               </span>
             </div>
@@ -1389,10 +1379,10 @@ export default function NotebookTodo() {
 
           {/* Legend */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Priority</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>PRIORITY</div>
             {(['high', 'medium', 'low'] as Priority[]).map(p => (
-              <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, color: '#666' }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: PRIORITY_COLORS[p], flexShrink: 0 }} />
+              <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, color: 'var(--muted)' }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[p], flexShrink: 0 }} />
                 {PRIORITY_LABELS[p]}
               </div>
             ))}
@@ -1401,7 +1391,7 @@ export default function NotebookTodo() {
           {/* Tag filter */}
           {allTags.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Filter by tag</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>FILTER BY TAG</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {allTags.map(tag => {
                   const { bg, text } = tagColor(tag)
@@ -1414,10 +1404,10 @@ export default function NotebookTodo() {
                         background: active ? text : bg,
                         color: active ? '#fff' : text,
                         border: `1.5px solid ${text}`,
-                        borderRadius: 12,
+                        borderRadius: 2,
                         padding: '3px 10px',
-                        fontSize: 16,
-                        fontFamily: "'Caveat', cursive",
+                        fontSize: 14,
+                        fontFamily: 'var(--font-body)',
                         cursor: 'pointer',
                         transition: 'all 0.15s',
                       }}
@@ -1433,10 +1423,10 @@ export default function NotebookTodo() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#aaa',
-                    fontSize: 15,
+                    color: 'var(--muted)',
+                    fontSize: 13,
                     cursor: 'pointer',
-                    fontFamily: "'Caveat', cursive",
+                    fontFamily: 'var(--font-body)',
                     textDecoration: 'underline',
                     textAlign: 'left',
                     padding: 0,
@@ -1450,10 +1440,10 @@ export default function NotebookTodo() {
 
           {/* Groups */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase' }}>Groups</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>GROUPS</div>
             {groups.map(g => (
-              <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 18, color: '#555', background: 'rgba(61,90,128,0.06)', borderRadius: 8, padding: '4px 8px' }}>
-                <IconFolder size={15} color="#6a8fb5" />
+              <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, color: 'var(--muted)', padding: '4px 0' }}>
+                <IconFolder size={15} color="oklch(58% 0.08 240)" />
                 {editingGroupId === g.id ? (
                   <input
                     autoFocus
@@ -1464,7 +1454,7 @@ export default function NotebookTodo() {
                       if (e.key === 'Escape') setEditingGroupId(null)
                     }}
                     onBlur={() => { renameGroup(g.id, editingGroupName); setEditingGroupId(null) }}
-                    style={{ flex: 1, border: 'none', borderBottom: '1.5px solid #3d5a80', outline: 'none', background: 'transparent', fontSize: 18, fontFamily: "'Caveat', cursive", color: '#3d5a80', padding: '1px 2px' }}
+                    style={{ flex: 1, border: 'none', borderBottom: '1.5px solid var(--fg)', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: 'var(--font-body)', color: 'var(--fg)', padding: '1px 2px' }}
                   />
                 ) : (
                   <span
@@ -1473,13 +1463,13 @@ export default function NotebookTodo() {
                     title="Double-click to rename"
                   >{g.name}</span>
                 )}
-                <span style={{ fontSize: 14, color: '#bbb' }}>{todos.filter(t => t.groupId === g.id).length}</span>
+                <span style={{ fontSize: 13, color: 'var(--border)' }}>{todos.filter(t => t.groupId === g.id).length}</span>
                 <button
                   onClick={() => deleteGroup(g.id)}
                   title="Delete group"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', lineHeight: 1, padding: '0 2px', display: 'flex', alignItems: 'center' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#ddd')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--border)', lineHeight: 1, padding: '0 2px', display: 'flex', alignItems: 'center' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--high)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--border)')}
                 ><IconClose size={10} /></button>
               </div>
             ))}
@@ -1496,18 +1486,18 @@ export default function NotebookTodo() {
                   if (e.key === 'Escape') setAddGroupName('')
                 }}
                 placeholder="+ New group..."
-                style={{ flex: 1, border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 18, fontFamily: "'Caveat', cursive", color: '#888', padding: '3px 2px' }}
+                style={{ flex: 1, border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 16, fontFamily: 'var(--font-body)', color: 'var(--muted)', padding: '3px 2px' }}
               />
               {addGroupName.trim() && (
                 <button
                   onClick={() => { createGroup(addGroupName.trim()); setAddGroupName('') }}
-                  style={{ background: '#3d5a80', color: '#fff', border: 'none', borderRadius: 12, padding: '2px 10px', fontSize: 16, fontFamily: "'Caveat', cursive", cursor: 'pointer' }}
+                  style={{ background: 'var(--fg)', color: 'var(--surface)', border: 'none', borderRadius: 2, padding: '2px 10px', fontSize: 14, fontFamily: 'var(--font-body)', cursor: 'pointer' }}
                 >Add</button>
               )}
             </div>
           </div>
 
-          <div style={{ fontSize: 15, color: '#ccc', marginTop: 'auto', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 13, color: 'var(--border)', marginTop: 'auto', lineHeight: 1.6, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
             Double-click a task to edit
             <br />Double-click a group to rename
           </div>
@@ -1529,7 +1519,7 @@ export default function NotebookTodo() {
                 position: 'absolute',
                 inset: 0,
                 zIndex: 25,
-                background: '#fdf8ef',
+                background: 'var(--surface)',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
@@ -1541,29 +1531,29 @@ export default function NotebookTodo() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: isMobile ? '10px 12px 8px 12px' : '14px 32px 10px 28px',
-                  borderBottom: '1.5px solid #c4daf5',
+                  borderBottom: '1.5px solid var(--border)',
                   flexShrink: 0,
-                  background: 'rgba(253,248,239,0.95)',
+                  background: 'var(--surface)',
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 30, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400, color: 'var(--fg)', lineHeight: 1.1 }}>
                     Achievement logs
                   </div>
-                  <div style={{ fontSize: 16, color: '#aaa', marginTop: 2 }}>
+                  <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>
                     All completed tasks across all days
                   </div>
                 </div>
                 <button
                   onClick={() => setShowAchievementLogs(false)}
                   style={{
-                    background: 'none',
-                    border: '1.5px solid #c4daf5',
-                    borderRadius: 8,
+                    background: 'transparent',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 2,
                     padding: '4px 14px',
-                    fontSize: 24,
-                    fontFamily: "'Caveat', cursive",
-                    color: '#3d5a80',
+                    fontSize: 22,
+                    fontFamily: 'var(--font-display)',
+                    color: 'var(--fg)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -1576,13 +1566,13 @@ export default function NotebookTodo() {
 
               <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
                 {achievementSections.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 24, lineHeight: 2 }}>
+                  <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 400, lineHeight: 2 }}>
                     No completed tasks yet.
                   </div>
                 ) : (
                   achievementSections.map(([date, sectionTodos]) => (
                     <div key={date || 'no-date'} style={{ marginBottom: 22 }}>
-                      <div style={{ fontSize: 21, color: '#3d5a80', marginBottom: 8, borderBottom: '1.5px solid rgba(196,218,245,0.8)', paddingBottom: 4 }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--fg)', marginBottom: 8, borderBottom: '1.5px solid var(--border)', paddingBottom: 4 }}>
                         {date ? `${pageLabel(date)} · ${pageSubLabel(date)}` : 'No date'}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1590,7 +1580,7 @@ export default function NotebookTodo() {
                           <div key={todo.id}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
                               <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                              <span style={{ flex: 1, minWidth: 0, fontSize: 24, color: '#9aa3ad', textDecorationLine: 'line-through', textDecorationColor: 'rgba(77, 184, 106, 0.5)', textDecorationThickness: 3, wordBreak: 'break-word' }}>
+                              <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--muted)', textDecorationLine: 'line-through', textDecorationColor: 'rgba(107,203,119,0.5)', textDecorationThickness: 2, wordBreak: 'break-word' }}>
                                 {todo.text}
                               </span>
                               {!isMobile && todo.tags.length > 0 && (
@@ -1598,7 +1588,7 @@ export default function NotebookTodo() {
                                   {todo.tags.map(tag => {
                                     const { bg, text } = tagColor(tag)
                                     return (
-                                      <span key={tag} style={{ background: bg, color: text, borderRadius: 10, padding: '1px 7px', fontSize: 15, opacity: 0.7 }}>
+                                      <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '1px 7px', fontSize: 13, opacity: 0.7 }}>
                                         #{tag}
                                       </span>
                                     )
@@ -1606,8 +1596,8 @@ export default function NotebookTodo() {
                                 </div>
                               )}
                               {!isMobile && todo.groupId && groupNameById.get(todo.groupId) && (
-                                <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
+                                <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <IconFolder size={13} color="var(--border)" /> {groupNameById.get(todo.groupId)}
                                 </span>
                               )}
                             </div>
@@ -1616,14 +1606,14 @@ export default function NotebookTodo() {
                                 {todo.tags.map(tag => {
                                   const { bg, text } = tagColor(tag)
                                   return (
-                                    <span key={tag} style={{ background: bg, color: text, borderRadius: 10, padding: '1px 7px', fontSize: 15, opacity: 0.7 }}>
+                                    <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '1px 7px', fontSize: 13, opacity: 0.7 }}>
                                       #{tag}
                                     </span>
                                   )
                                 })}
                                 {todo.groupId && groupNameById.get(todo.groupId) && (
-                                  <span style={{ fontSize: 13, color: '#aaa', background: 'rgba(61,90,128,0.08)', borderRadius: 8, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <IconFolder size={13} color="#bbb" /> {groupNameById.get(todo.groupId)}
+                                  <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <IconFolder size={13} color="var(--border)" /> {groupNameById.get(todo.groupId)}
                                   </span>
                                 )}
                               </div>
@@ -1644,25 +1634,26 @@ export default function NotebookTodo() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: isMobile ? '10px 12px 8px 12px' : '14px 32px 10px 28px',
-              borderBottom: '1.5px solid #c4daf5',
+              padding: '12px 24px',
+              borderBottom: '1.5px solid var(--border)',
               flexShrink: 0,
-              background: 'rgba(253,248,239,0.95)',
+              background: 'rgba(255,255,255,0.88)',
+              backdropFilter: 'blur(8px)',
               position: 'sticky',
-              top: 0,
+              top: isMobile ? 0 : 64,
               zIndex: 10,
             }}
           >
             <button
               onClick={() => navigatePage(-1)}
               style={{
-                background: 'none',
-                border: '1.5px solid #c4daf5',
-                borderRadius: 8,
+                background: 'transparent',
+                border: '1.5px solid var(--border)',
+                borderRadius: 2,
                 padding: '4px 14px',
-                fontSize: 22,
-                fontFamily: "'Caveat', cursive",
-                color: '#3d5a80',
+                fontSize: 20,
+                fontFamily: 'var(--font-display)',
+                color: 'var(--muted)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1673,10 +1664,10 @@ export default function NotebookTodo() {
             </button>
 
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 30, fontWeight: 'bold', color: '#2c3e50', lineHeight: 1.1 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400, letterSpacing: '-0.02em', color: 'var(--fg)', lineHeight: 1.1 }}>
                 {pageLabel(currentPage)}
               </div>
-              <div style={{ fontSize: 16, color: '#aaa', marginTop: 2 }}>
+              <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>
                 {pageSubLabel(currentPage)}
               </div>
               {!isToday && (
@@ -1685,9 +1676,9 @@ export default function NotebookTodo() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#3d5a80',
-                    fontSize: 15,
-                    fontFamily: "'Caveat', cursive",
+                    color: 'var(--accent)',
+                    fontSize: 13,
+                    fontFamily: 'var(--font-body)',
                     cursor: 'pointer',
                     textDecoration: 'underline',
                     marginTop: 2,
@@ -1703,18 +1694,18 @@ export default function NotebookTodo() {
                   title={`Move ${pendingOnPage.length} uncompleted task${pendingOnPage.length > 1 ? 's' : ''} to today`}
                   style={{
                     marginTop: 4,
-                    background: 'linear-gradient(90deg, #3d5a80, #6bcb77)',
+                    background: 'var(--accent)',
                     border: 'none',
-                    borderRadius: 14,
-                    padding: '3px 14px',
-                    fontSize: 16,
-                    fontFamily: "'Caveat', cursive",
-                    color: '#fff',
+                    borderRadius: 2,
+                    padding: '6px 16px',
+                    fontSize: 14,
+                    fontFamily: 'var(--font-body)',
+                    color: 'var(--surface)',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
-                    boxShadow: '0 1px 6px rgba(61,90,128,0.18)',
+                    boxShadow: 'none',
                   }}
                 >
                   ↩ Roll {pendingOnPage.length} task{pendingOnPage.length > 1 ? 's' : ''} → Today
@@ -1725,13 +1716,13 @@ export default function NotebookTodo() {
             <button
               onClick={() => navigatePage(1)}
               style={{
-                background: 'none',
-                border: '1.5px solid #c4daf5',
-                borderRadius: 8,
+                background: 'transparent',
+                border: '1.5px solid var(--border)',
+                borderRadius: 2,
                 padding: '4px 14px',
-                fontSize: 22,
-                fontFamily: "'Caveat', cursive",
-                color: '#3d5a80',
+                fontSize: 20,
+                fontFamily: 'var(--font-display)',
+                color: 'var(--muted)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1747,17 +1738,17 @@ export default function NotebookTodo() {
               style={{
                 margin: '10px 12px 0',
                 padding: '12px 12px 10px',
-                border: '1.5px dashed #c4daf5',
-                borderRadius: 10,
-                background: 'rgba(255,255,255,0.62)',
+                border: '1.5px dashed var(--border)',
+                borderRadius: 2,
+                background: 'var(--surface)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 8,
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                <div style={{ fontSize: 22, color: '#3d5a80', lineHeight: 1.1 }}>Quick notes</div>
-                <div style={{ fontSize: 14, color: '#aaa' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase', lineHeight: 1.1 }}>QUICK NOTES</div>
+                <div style={{ fontSize: 13, color: 'var(--border)' }}>
                   {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
                 </div>
               </div>
@@ -1776,12 +1767,12 @@ export default function NotebookTodo() {
                   style={{
                     flex: 1,
                     border: 'none',
-                    borderBottom: '1.5px dashed #c4daf5',
+                    borderBottom: '1.5px dashed var(--border)',
                     outline: 'none',
                     background: 'transparent',
-                    fontSize: 19,
-                    fontFamily: "'Caveat', cursive",
-                    color: '#2c3e50',
+                    fontSize: 17,
+                    fontFamily: 'var(--font-display)',
+                    color: 'var(--fg)',
                     padding: '2px 0',
                   }}
                 />
@@ -1789,15 +1780,16 @@ export default function NotebookTodo() {
                   onMouseDown={e => { e.preventDefault(); addQuickNote() }}
                   disabled={!quickNoteInput.trim()}
                   style={{
-                    background: quickNoteInput.trim() ? '#3d5a80' : '#ccc',
-                    color: '#fff',
+                    background: 'var(--fg)',
+                    color: 'var(--surface)',
                     border: 'none',
-                    borderRadius: 14,
+                    borderRadius: 2,
                     padding: '3px 12px',
-                    fontSize: 16,
-                    fontFamily: "'Caveat', cursive",
+                    fontSize: 15,
+                    fontFamily: 'var(--font-body)',
                     cursor: quickNoteInput.trim() ? 'pointer' : 'not-allowed',
                     flexShrink: 0,
+                    opacity: quickNoteInput.trim() ? 1 : 0.4,
                   }}
                 >
                   + Add
@@ -1806,7 +1798,7 @@ export default function NotebookTodo() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 210, overflowY: 'auto' }}>
                 {quickNotes.length === 0 ? (
-                  <div style={{ color: '#bbb', fontSize: 17, lineHeight: 1.7, padding: '4px 2px 2px' }}>
+                  <div style={{ color: 'var(--border)', fontSize: 15, lineHeight: 1.7, padding: '4px 2px 2px' }}>
                     No notes yet.
                   </div>
                 ) : (
@@ -1818,7 +1810,7 @@ export default function NotebookTodo() {
                         alignItems: 'flex-start',
                         gap: 8,
                         padding: '5px 2px',
-                        borderBottom: '1px solid rgba(196,218,245,0.45)',
+                        borderBottom: '1px solid var(--border)',
                         opacity: note.completed ? 0.55 : 1,
                       }}
                     >
@@ -1829,8 +1821,8 @@ export default function NotebookTodo() {
                           width: 18,
                           height: 18,
                           borderRadius: '50%',
-                          border: note.completed ? 'none' : '2px solid #c4daf5',
-                          background: note.completed ? '#6bcb77' : 'transparent',
+                          border: note.completed ? 'none' : '2px solid var(--border)',
+                          background: note.completed ? 'var(--success)' : 'transparent',
                           cursor: 'pointer',
                           flexShrink: 0,
                           display: 'flex',
@@ -1845,11 +1837,12 @@ export default function NotebookTodo() {
                       <span
                         style={{
                           flex: 1,
-                          fontSize: 19,
-                          color: note.completed ? '#9aa3ad' : '#2c3e50',
+                          fontFamily: 'var(--font-display)',
+                          fontSize: 17,
+                          color: note.completed ? 'var(--muted)' : 'var(--fg)',
                           textDecorationLine: note.completed ? 'line-through' : 'none',
-                          textDecorationColor: 'rgba(77,184,106,0.5)',
-                          textDecorationThickness: 3,
+                          textDecorationColor: 'rgba(107,203,119,0.5)',
+                          textDecorationThickness: 2,
                           wordBreak: 'break-word',
                           lineHeight: 1.3,
                         }}
@@ -1863,7 +1856,7 @@ export default function NotebookTodo() {
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
-                          color: '#ddd',
+                          color: 'var(--border)',
                           padding: 2,
                           display: 'flex',
                           alignItems: 'center',
@@ -1883,18 +1876,18 @@ export default function NotebookTodo() {
           <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1 }}>
             {pageFilteredTodos.length === 0 && !inlineAddFocused ? (
               activeTagFilter ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb', fontSize: 24, lineHeight: 2 }}>
-                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconTag size={48} /></div>
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 400, lineHeight: 2 }}>
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center', color: 'var(--border)' }}><IconTag size={48} /></div>
                   <div>No tasks tagged <strong>#{activeTagFilter}</strong> on this page</div>
                 </div>
               ) : (
                 <div
-                  style={{ textAlign: 'center', padding: '60px 0 20px', color: '#bbb', fontSize: 24, lineHeight: 2, cursor: 'pointer' }}
+                  style={{ textAlign: 'center', padding: '60px 0 20px', color: 'var(--muted)', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 400, lineHeight: 2, cursor: 'pointer' }}
                   onClick={() => inputRef.current?.focus()}
                 >
-                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><IconNotebook size={56} /></div>
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center', color: 'var(--border)' }}><IconNotebook size={56} /></div>
                   <div>{isToday ? 'Nothing planned for today.' : `Nothing planned for ${pageLabel(currentPage)}.`}</div>
-                  <div style={{ fontSize: 19 }}>Click the line below to add a task.</div>
+                  <div style={{ fontSize: 17, color: 'var(--border)', fontFamily: 'var(--font-body)' }}>Click the line below to add a task.</div>
                 </div>
               )
             ) : (
@@ -1907,9 +1900,9 @@ export default function NotebookTodo() {
                 {groupSections.map(group => (
                   <div key={group.group.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
-                      <IconFolder size={18} color="#3d5a80" />
-                      <span style={{ fontSize: 22, fontWeight: 'bold', color: '#3d5a80' }}>{group.group.name}</span>
-                      <span style={{ fontSize: 16, color: '#bbb', marginLeft: 2 }}>({group.todos.length})</span>
+                      <IconFolder size={18} color="var(--fg)" />
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, color: 'var(--fg)' }}>{group.group.name}</span>
+                      <span style={{ fontSize: 14, color: 'var(--muted)', marginLeft: 2 }}>({group.todos.length})</span>
                     </div>
                     <SortableContext items={group.todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
                       {group.todos.map(todo => (
@@ -1953,7 +1946,7 @@ export default function NotebookTodo() {
                     {groupSections.length > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
                         <IconClipboard size={18} />
-                        <span style={{ fontSize: 22, color: '#aaa' }}>Other</span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--fg)' }}>Other</span>
                       </div>
                     )}
                     <SortableContext items={ungroupedTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
@@ -2041,8 +2034,8 @@ export default function NotebookTodo() {
                 flexDirection: 'column',
                 gap: 0,
                 marginTop: 4,
-                borderRadius: 6,
-                background: inlineAddFocused ? 'rgba(255,255,255,0.7)' : 'transparent',
+                borderRadius: 0,
+                background: inlineAddFocused ? 'rgba(255,255,255,0.6)' : 'transparent',
                 transition: 'background 0.2s',
               }}
             >
@@ -2088,9 +2081,9 @@ export default function NotebookTodo() {
                     border: 'none',
                     outline: 'none',
                     background: 'transparent',
-                    fontSize: 22,
-                    fontFamily: "'Caveat', cursive",
-                    color: inlineAddFocused ? '#2c3e50' : '#aaa',
+                    fontSize: 20,
+                    fontFamily: 'var(--font-display)',
+                    color: inlineAddFocused ? 'var(--fg)' : 'var(--border)',
                   }}
                 />
               </div>
@@ -2111,7 +2104,7 @@ export default function NotebookTodo() {
                   {inputTags.map(tag => {
                     const { bg, text } = tagColor(tag)
                     return (
-                      <span key={tag} style={{ background: bg, color: text, borderRadius: 12, padding: '2px 8px', fontSize: 16, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '2px 8px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
                         #{tag}
                         <button onMouseDown={e => { e.preventDefault(); removeInputTag(tag) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 16, lineHeight: 1, padding: 0, opacity: 0.7, display: 'flex', alignItems: 'center' }}><IconClose size={9} color={text} /></button>
                       </span>
@@ -2133,21 +2126,21 @@ export default function NotebookTodo() {
                         else if (e.key === 'Backspace' && !inputTagText && inputTags.length > 0) setInputTags(prev => prev.slice(0, -1))
                       }}
                       placeholder="# tag..."
-                      style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#888', width: 70 }}
+                      style={{ border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--muted)', width: 70 }}
                     />
                     {tagDropdownOpen && (() => {
                       const query = inputTagText.trim().toLowerCase()
                       const suggestions = allTags.filter(t => !inputTags.includes(t) && (query === '' || t.includes(query)))
                       if (suggestions.length === 0) return null
                       return (
-                        <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1.5px solid #c4daf5', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
-                          <div style={{ padding: '4px 10px', fontSize: 12, color: '#bbb', letterSpacing: 2, textTransform: 'uppercase', borderBottom: '1px solid #f0f0f0' }}>Existing tags</div>
+                        <div style={{ position: 'absolute', top: '100%', left: 0, background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 2, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 20, marginTop: 4, minWidth: 160, overflow: 'hidden' }}>
+                          <div style={{ padding: '4px 10px', fontSize: 11, color: 'var(--muted)', letterSpacing: '0.15em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>Existing tags</div>
                           {suggestions.map(tag => {
                             const { bg, text } = tagColor(tag)
                             return (
-                              <div key={tag} onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 18, fontFamily: "'Caveat', cursive", display: 'flex', alignItems: 'center', gap: 8, color: '#444' }} onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                <span style={{ background: bg, color: text, borderRadius: 10, padding: '1px 8px', fontSize: 16 }}>#{tag}</span>
-                                <span style={{ color: '#bbb', fontSize: 14 }}>{todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}</span>
+                              <div key={tag} onMouseDown={e => { e.preventDefault(); setInputTags(prev => [...new Set([...prev, tag])]); setInputTagText(''); setTagDropdownOpen(false); tagInputRef.current?.focus() }} style={{ padding: '7px 12px', cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fg)' }} onMouseEnter={e => (e.currentTarget.style.background = 'oklch(97% 0.006 80)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                <span style={{ background: bg, color: text, borderRadius: 2, padding: '1px 8px', fontSize: 13 }}>#{tag}</span>
+                                <span style={{ color: 'var(--border)', fontSize: 13 }}>{todos.filter(t => t.tags.includes(tag)).length} task{todos.filter(t => t.tags.includes(tag)).length !== 1 ? 's' : ''}</span>
                               </div>
                             )
                           })}
@@ -2157,12 +2150,12 @@ export default function NotebookTodo() {
                   </div>
 
                   {/* Date */}
-                  <input type="date" value={inputDate} onChange={e => setInputDate(e.target.value)} style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer' }} />
+                  <input type="date" value={inputDate} onChange={e => setInputDate(e.target.value)} style={{ border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--muted)', padding: '2px 4px', cursor: 'pointer' }} />
 
                   {/* Priority dots */}
                   <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                     {(['low', 'medium', 'high'] as Priority[]).map(p => (
-                      <button key={p} onMouseDown={e => { e.preventDefault(); setInputPriority(p) }} title={PRIORITY_LABELS[p]} style={{ width: 16, height: 16, borderRadius: '50%', border: inputPriority === p ? '2.5px solid #333' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: inputPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }} />
+                      <button key={p} onMouseDown={e => { e.preventDefault(); setInputPriority(p) }} title={PRIORITY_LABELS[p]} style={{ width: 16, height: 16, borderRadius: '50%', border: inputPriority === p ? '2.5px solid var(--fg)' : '2px solid transparent', background: PRIORITY_COLORS[p], cursor: 'pointer', transition: 'transform 0.15s', transform: inputPriority === p ? 'scale(1.2)' : 'scale(1)', padding: 0 }} />
                     ))}
                   </div>
 
@@ -2171,7 +2164,7 @@ export default function NotebookTodo() {
                     value={inputGroupId}
                     onMouseDown={e => e.stopPropagation()}
                     onChange={e => setInputGroupId(e.target.value)}
-                    style={{ border: 'none', borderBottom: '1px dashed #c4daf5', outline: 'none', background: 'transparent', fontSize: 17, fontFamily: "'Caveat', cursive", color: '#555', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
+                    style={{ border: 'none', borderBottom: '1.5px dashed var(--border)', outline: 'none', background: 'transparent', fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--muted)', padding: '2px 4px', cursor: 'pointer', maxWidth: 130 }}
                   >
                     <option value="">No group</option>
                     {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -2181,7 +2174,7 @@ export default function NotebookTodo() {
                   <button
                     onMouseDown={e => { e.preventDefault(); addTodo(); setInlineAddFocused(false) }}
                     disabled={!inputText.trim()}
-                    style={{ marginLeft: 'auto', background: inputText.trim() ? '#3d5a80' : '#ccc', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 18px', fontSize: 19, fontFamily: "'Caveat', cursive", cursor: inputText.trim() ? 'pointer' : 'not-allowed', transition: 'background 0.2s', flexShrink: 0 }}
+                    style={{ marginLeft: 'auto', background: 'var(--fg)', color: 'var(--surface)', border: 'none', borderRadius: 2, padding: '5px 18px', fontSize: 17, fontFamily: 'var(--font-body)', cursor: inputText.trim() ? 'pointer' : 'not-allowed', transition: 'background 0.2s', flexShrink: 0, opacity: inputText.trim() ? 1 : 0.4 }}
                   >
                     + Add
                   </button>
@@ -2199,7 +2192,8 @@ export default function NotebookTodo() {
               flexShrink: 0,
               overflowY: 'auto',
               padding: '20px 20px 32px 20px',
-              borderLeft: '1.5px dashed #c4daf5',
+              borderLeft: '1.5px dashed var(--border)',
+              background: 'var(--surface)',
               display: 'flex',
               flexDirection: 'column',
               gap: 16,
@@ -2207,8 +2201,8 @@ export default function NotebookTodo() {
           >
             {/* Section heading */}
             <div>
-              <div style={{ fontSize: 12, color: '#aaa', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Quick notes</div>
-              <div style={{ fontSize: 15, color: '#bbb' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 6 }}>QUICK NOTES</div>
+              <div style={{ fontSize: 13, color: 'var(--border)' }}>
                 {quickNotes.filter(n => !n.completed).length} active · {quickNotes.filter(n => n.completed).length} done
               </div>
             </div>
@@ -2227,12 +2221,12 @@ export default function NotebookTodo() {
                 placeholder="＋  Write a note..."
                 style={{
                   border: 'none',
-                  borderBottom: '1.5px dashed #c4daf5',
+                  borderBottom: '1.5px dashed var(--border)',
                   outline: 'none',
                   background: 'transparent',
-                  fontSize: 19,
-                  fontFamily: "'Caveat', cursive",
-                  color: '#2c3e50',
+                  fontSize: 17,
+                  fontFamily: 'var(--font-display)',
+                  color: 'var(--fg)',
                   padding: '4px 0',
                   width: '100%',
                 }}
@@ -2241,13 +2235,13 @@ export default function NotebookTodo() {
                 <button
                   onMouseDown={e => { e.preventDefault(); addQuickNote() }}
                   style={{
-                    background: '#3d5a80',
-                    color: '#fff',
+                    background: 'var(--fg)',
+                    color: 'var(--surface)',
                     border: 'none',
-                    borderRadius: 16,
+                    borderRadius: 2,
                     padding: '4px 14px',
-                    fontSize: 17,
-                    fontFamily: "'Caveat', cursive",
+                    fontSize: 15,
+                    fontFamily: 'var(--font-body)',
                     cursor: 'pointer',
                     alignSelf: 'flex-start',
                   }}
@@ -2260,7 +2254,7 @@ export default function NotebookTodo() {
             {/* Notes list */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {quickNotes.length === 0 ? (
-                <div style={{ color: '#ccc', fontSize: 17, lineHeight: 1.8, paddingTop: 8 }}>
+                <div style={{ color: 'var(--border)', fontSize: 15, lineHeight: 1.8, paddingTop: 8 }}>
                   No notes yet.
                 </div>
               ) : (
@@ -2272,7 +2266,7 @@ export default function NotebookTodo() {
                       alignItems: 'flex-start',
                       gap: 8,
                       padding: '6px 4px',
-                      borderBottom: '1px solid rgba(196,218,245,0.5)',
+                      borderBottom: '1px solid var(--border)',
                       opacity: note.completed ? 0.55 : 1,
                       transition: 'opacity 0.15s',
                     }}
@@ -2285,8 +2279,8 @@ export default function NotebookTodo() {
                         width: 18,
                         height: 18,
                         borderRadius: '50%',
-                        border: note.completed ? 'none' : '2px solid #c4daf5',
-                        background: note.completed ? '#6bcb77' : 'transparent',
+                        border: note.completed ? 'none' : '2px solid var(--border)',
+                        background: note.completed ? 'var(--success)' : 'transparent',
                         cursor: 'pointer',
                         flexShrink: 0,
                         display: 'flex',
@@ -2304,11 +2298,12 @@ export default function NotebookTodo() {
                     <span
                       style={{
                         flex: 1,
-                        fontSize: 19,
-                        color: note.completed ? '#9aa3ad' : '#2c3e50',
+                        fontFamily: 'var(--font-display)',
+                        fontSize: 17,
+                        color: note.completed ? 'var(--muted)' : 'var(--fg)',
                         textDecorationLine: note.completed ? 'line-through' : 'none',
-                        textDecorationColor: 'rgba(77,184,106,0.5)',
-                        textDecorationThickness: 3,
+                        textDecorationColor: 'rgba(107,203,119,0.5)',
+                        textDecorationThickness: 2,
                         wordBreak: 'break-word',
                         lineHeight: 1.3,
                       }}
@@ -2324,16 +2319,16 @@ export default function NotebookTodo() {
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#ddd',
+                        color: 'var(--border)',
                         padding: 2,
                         display: 'flex',
                         alignItems: 'center',
                         flexShrink: 0,
-                        borderRadius: 4,
+                        borderRadius: 2,
                         transition: 'color 0.15s',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#ddd')}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--high)')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--border)')}
                     >
                       <IconClose size={10} color="currentColor" />
                     </button>
