@@ -1507,8 +1507,7 @@ export default function NotebookTodo() {
         <div
           style={{
             flex: 1,
-            overflowY: 'auto',
-            overscrollBehavior: 'contain',
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
@@ -1639,10 +1638,6 @@ export default function NotebookTodo() {
               borderBottom: '1.5px solid var(--border)',
               flexShrink: 0,
               background: 'oklch(97% 0.012 80 / 0.95)',
-              backdropFilter: 'blur(8px)',
-              position: 'sticky',
-              top: 0,
-              zIndex: 10,
             }}
           >
             <button
@@ -1733,6 +1728,9 @@ export default function NotebookTodo() {
               Next <IconArrowRight />
             </button>
           </div>
+
+          {/* Scrollable content — only this area scrolls */}
+          <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
 
           {isMobile && (
             <div
@@ -2182,6 +2180,8 @@ export default function NotebookTodo() {
                 </div>
               )}
             </div>
+          </div>
+          {/* end scrollable content */}
           </div>
         </div>
 
