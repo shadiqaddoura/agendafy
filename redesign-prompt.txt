@@ -1,0 +1,194 @@
+Redesign Prompt for Agendafy
+
+Redesign the Agendafy daily planner web app — a notebook-style todo/task manager built in React/Next.js. Below is the complete inventory of every screen, component, text string, and color token currently used.
+
+---
+
+GLOBAL
+- Font: Caveat, cursive (handwritten feel) throughout the entire UI
+- Base background color: #fdf8ef (warm off-white parchment)
+- Horizontal ruled lines on the main body: repeating blue lines (#c4daf5, 1px every 32px)
+- Primary blue: #3d5a80
+- Dark navy: #293241
+- Priority colors: High #ef476f (red-pink), Medium #ffd166 (amber), Low #6bcb77 (green)
+- Success/complete green: #4db86a / #6bcb77
+- Tag chips: deterministic pastel HSL per-tag (hue from string hash, 55% sat, 88% light for bg; 50% sat, 32% light for text)
+- Text primary: #2c3e50; secondary: #888; muted: #aaa; disabled: #ccc; completed: #9aa3ad / #bbb
+- Error red: #ef476f; error bg: rgba(239,71,111,0.08); error text: #c25555
+- Borders/dividers: 1.5px dashed #c4daf5 (blue-tinted, dashed feel for notebook pages)
+
+---
+
+LOADING STATE
+- Full viewport, centered
+- Background: linear-gradient(180deg, #fdf8ef, #f3eee4)
+- Text: "Preparing your notebook..." — 34px Caveat, color #3d5a80
+
+---
+
+SIGN-IN PAGE (unauthenticated)
+- Background: rgba(253,248,239,0.28)
+- Outer wrapper: min(92vw, 520px) centered column
+- Welcome text block (above card):
+  - Headline: "Welcome to Agendafy" — 38px, black
+  - Subtext: "A notebook-style daily planner for tasks, quick notes, and goals that keeps your days beautifully organized." — 22px, black
+- Sign-in card (min(92vw, 460px), white 86% opacity, border 1.5px solid #c4daf5, border-radius 16, box-shadow 0 12px 40px rgba(41,50,65,0.08)):
+  - Eyebrow label: "Agendafy" — 14px, uppercase, letter-spacing 3, color #8da5bf
+  - Title: "Sign in to your notebook" — 42px Caveat
+  - Subtitle: "Use Google to continue." — 23px, color #7d8ca0
+  - Error banner (conditional): error message text in red, pink tinted bg, border-radius 10
+  - Google sign-in button: pill border-radius 999, background #3d5a80 (disabled: #b5c3d3), white text, 26px Caveat; contains a 26x26 white circle with the colored Google "G" SVG icon inside; text: "Continue with Google" / loading state: "Signing in..."
+
+---
+
+MAIN APP — HEADER BAR
+- Background: linear-gradient(180deg, #3d5a80, #293241)
+- Decorative: large faint circle (top-right, 220px, rgba(255,255,255,0.04))
+- Text color: #e0e0e0
+- Left section:
+  - Label "Agenda" — 12px, uppercase, letter-spacing 4, opacity 0.6
+  - "Agendafy" — h1, 36px, bold, letter-spacing 1
+- Center (desktop only): "Wednesday, May 28, 2026" — 17px, opacity 0.5
+- Right section (desktop):
+  - User avatar: 26x26 circle, rgba(255,255,255,0.22) bg, first initial of display name/email
+  - Username: 16px, opacity 0.82
+  - Stats: "X pending · Y done" — 17px, opacity 0.6
+  - "Sign out" button: transparent bg, border 1.5px solid rgba(224,224,224,0.5), pill shape, 16px Caveat
+  - "Achievement logs" link: underline, color #d6e2f0
+- Mobile:
+  - Hamburger "☰" button: rgba(255,255,255,0.15) bg, 8px border-radius
+  - "Achievements" link (shorter label)
+  - "Sign out" (smaller 14px)
+
+---
+
+MAIN APP — BODY LAYOUT
+Three-column layout (binding + left panel + center + right panel):
+
+Binding column (desktop only): 52px wide, background linear-gradient(90deg, #e8ddd0, #f0ebe0), right border 2px solid #f4a0a0 (salmon-red spine)
+
+Left Sidebar (260px desktop / 80vw mobile drawer):
+- Border-right: 1.5px dashed #c4daf5
+- Mobile: fixed drawer with dark overlay, "Close ✕" button
+- Progress card: background rgba(61,90,128,0.06), border-radius 10
+  - Section label: "PROGRESS" — 12px, uppercase, letter-spacing 2, #aaa
+  - Progress bar: 8px tall, rounded, track #e0e0e0, fill linear-gradient(90deg, #3d5a80, #6bcb77), animated width
+  - Below bar: "X remaining" (gray) · "Y%" (green #6bcb77)
+- Priority legend:
+  - Label: "PRIORITY" — same style
+  - Three rows: color dot (12px circle) + label text ("High!", "Medium", "Low") — 18px, #666
+- Tag filter section (only if tags exist):
+  - Label: "FILTER BY TAG"
+  - Tag pill buttons: pastel per-tag, active state = inverted (text color bg, white text), 1.5px solid border, 16px Caveat
+  - "Clear filter" link (when active): underline, #aaa, 15px
+- Groups section:
+  - Label: "GROUPS"
+  - Group rows: folder SVG icon (#6a8fb5), group name (18px, #555), count badge (#bbb), delete ✕ button (#ddd → #ef476f hover)
+  - Double-click name to rename (inline input, #3d5a80 underline)
+  - "+ New group..." input: dashed border-bottom, 18px Caveat, #888 placeholder
+  - "Add" button (appears when typing): #3d5a80 bg, white, pill, 16px
+- Footer tip (bottom of sidebar): "Double-click a task to edit" / "Double-click a group to rename" — 15px, #ccc
+
+---
+
+CENTER PANEL — ACHIEVEMENT LOGS OVERLAY
+(Full-cover absolute overlay, z-index 25)
+- Background: #fdf8ef
+- Header: border-bottom 1.5px solid #c4daf5
+  - Title: "Achievement logs" — 30px, bold, #2c3e50
+  - Subtitle: "All completed tasks across all days" — 16px, #aaa
+  - "← Back" button: bordered, blue, 24px Caveat
+- Content area: padded, scrollable
+  - Empty state: "No completed tasks yet." — 24px, #bbb, centered, with line-height 2
+  - Date section headers: date string (e.g. "Today · May 28, 2026") — 21px, #3d5a80, border-bottom 1.5px solid rgba(196,218,245,0.8)
+  - Task rows: priority dot + strikethrough text (#9aa3ad) + tags + group badge (same visual as main list)
+
+---
+
+CENTER PANEL — PAGE NAVIGATION BAR
+(Sticky top, rgba(253,248,239,0.95) bg, border-bottom 1.5px solid #c4daf5, z-index 10)
+- "← Prev" button: bordered (1.5px solid #c4daf5), blue, 8px radius, 22px Caveat
+- Center block:
+  - Page title: "Today" / "Tomorrow" / "Yesterday" / weekday long — 30px bold #2c3e50
+  - Date subtitle: "May 28, 2026" — 16px #aaa
+  - "Back to Today" link (on non-today pages): underline, #3d5a80, 15px
+  - "↩ Roll X task(s) → Today" button (past pages with pending tasks): gradient linear-gradient(90deg, #3d5a80, #6bcb77), pill, white, 16px, shadow
+- "Next →" button: same style as Prev
+
+---
+
+CENTER PANEL — EMPTY STATES
+- No tasks (current page): centered block, 60px top padding
+  - Notebook SVG icon (56px, stroke #bbb)
+  - "Nothing planned for today." or "Nothing planned for [Day Name]." — 24px, #bbb
+  - "Click the line below to add a task." — 19px, #bbb
+  - Entire block is clickable (focuses add input)
+- Tag filter active, no results:
+  - Tag SVG icon (48px, stroke #bbb)
+  - "No tasks tagged #[tagname] on this page" — 24px
+
+---
+
+CENTER PANEL — TODO ITEMS
+Each todo row (SortableTodoItem):
+- Hover: rgba(61,90,128,0.06) background
+- Drag overlay: rgba(61,90,128,0.08) bg, 0 4px 16px rgba(0,0,0,0.12) shadow
+- Dragging item: 30% opacity placeholder
+- Drag handle: "⠿" braille dots, #ccc, grab cursor, 16px
+- Priority dot: 10px circle, PRIORITY_COLORS, shadow 0 1px 3px rgba(0,0,0,0.2)
+- Checkbox: 22px circle, border/fill #4db86a (green); filled with white checkmark SVG when complete; transition 0.2s
+- Task text: 24px Caveat, #2c3e50 (incomplete) / #bbb with green strikethrough (rgba(77,184,106,0.5), 3px thick) when complete; double-click to edit
+- Tag chips (desktop only): pastel per-tag, borderRadius 10, padding 1px 7px, 15px; click to filter; active filter = bordered
+- Group badge: rgba(61,90,128,0.08) bg, #aaa text, folder icon (13px), 8px border-radius, 13px text
+- Delete button: ✕ SVG (10px), #ccc → #ef476f on hover
+- Mobile: tags and group badge move to a second row below (indented 64px left)
+
+Edit mode (inline expansion):
+- Input: 24px Caveat, border-bottom 2px solid #3d5a80, transparent bg
+- Metadata row: rgba(255,255,255,0.6) bg, border-bottom 1px solid rgba(196,218,245,0.6)
+  - Tag chips with ✕ remove buttons
+  - "# tag..." input: dashed border, 15px Caveat, #888
+  - Tag dropdown: white bg, 1.5px solid #c4daf5 border, shadow, "EXISTING TAGS" header (11px uppercase, #bbb)
+  - Date <input type="date">: dashed border, 15px Caveat
+  - Priority dot selectors: 16px circles, selected = 2.5px solid #333 border + scale(1.2)
+  - Group <select>: dashed border, 15px Caveat
+  - "Save" button: #3d5a80 bg (disabled: #ccc), white, borderRadius 20, 17px
+  - "Cancel" button: no bg, 1.5px solid #ccc, gray, borderRadius 20
+
+Group section headers (when groups exist on page):
+- Folder SVG icon (#3d5a80, 18px) + group name (22px bold #3d5a80) + count ("(N)", 16px #bbb)
+- Border-bottom 1.5px solid rgba(196,218,245,0.8)
+
+"Other" section header (ungrouped tasks when groups also exist):
+- Clipboard SVG icon (#aaa, 18px) + "Other" (22px #aaa)
+
+---
+
+CENTER PANEL — INLINE ADD ROW
+(Always anchored below the todo list)
+- Background: transparent → rgba(255,255,255,0.7) when focused; transition 0.2s
+- Row layout: spacer (18px) + dashed empty circle + text input
+- Empty circle: 22px, border 2px dashed [current priority color], 40% opacity
+- Input: 22px Caveat, placeholder "＋  Write a new task...", #aaa → #2c3e50 when focused
+- Border-bottom: 1px solid rgba(196,218,245,0.6)
+- Expanded metadata row (on focus): same layout as edit mode metadata row
+  - Date, tags, priority dots, group select, "+ Add" button (#3d5a80 bg, pill, 19px)
+
+---
+
+RIGHT PANEL — QUICK NOTES (desktop only)
+- Width 260px, border-left 1.5px dashed #c4daf5
+- Header: "QUICK NOTES" — 12px uppercase letter-spacing 2, #aaa; "X active · Y done" — 15px #bbb
+- Add input: border-bottom 1.5px dashed #c4daf5, placeholder "＋  Write a note...", 19px Caveat
+- "+ Add" button (appears on typing): #3d5a80 bg, white, pill, 17px, align-self: flex-start
+- Note list rows:
+  - 18px circle checkbox: 2px solid #c4daf5 border (unchecked) → #6bcb77 filled (checked)
+  - Note text: 19px Caveat, #2c3e50 → strikethrough #9aa3ad (completed); opacity 0.55 when done
+  - Delete ✕ button: #ddd → #ef476f hover
+  - Row border-bottom: 1px solid rgba(196,218,245,0.5)
+  - Empty state: "No notes yet." — 17px #ccc
+- Mobile: Quick Notes panel moves into the main content area (appears above the todo list), with a "+ Add" button always visible, max-height 210px scrollable list
+
+---
+
+Use this inventory to redesign the UI — you may change the visual language (e.g. from handwritten/notebook to minimal/modern, glassmorphism, dark mode, etc.) while preserving all these functional components and their text strings.
