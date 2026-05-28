@@ -41,13 +41,6 @@
       ]
     },
     {
-      "collectionGroup": "groups",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "quickNotes",
       "queryScope": "COLLECTION",
       "fields": [
