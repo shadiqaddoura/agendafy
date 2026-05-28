@@ -415,14 +415,6 @@ function SortableTodoItem({
         </div>
       )}
 
-      {!isEditing && !isMobile && todo.groupId && (() => {
-        const g = groups.find(g => g.id === todo.groupId)
-        return g ? (
-          <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <IconFolder size={13} color="var(--border)" /> {g.name}
-            </span>
-        ) : null
-      })()}
 
       {/* Delete (only when not editing) */}
       {!isEditing && (
@@ -474,14 +466,6 @@ function SortableTodoItem({
             </span>
           )
         })}
-        {todo.groupId && (() => {
-          const g = groups.find(g => g.id === todo.groupId)
-          return g ? (
-            <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <IconFolder size={13} color="var(--border)" /> {g.name}
-            </span>
-          ) : null
-        })()}
       </div>
     )}
 
@@ -1595,13 +1579,8 @@ export default function NotebookTodo() {
                                   })}
                                 </div>
                               )}
-                              {!isMobile && todo.groupId && groupNameById.get(todo.groupId) && (
-                                <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  <IconFolder size={13} color="var(--border)" /> {groupNameById.get(todo.groupId)}
-                                </span>
-                              )}
                             </div>
-                            {isMobile && (todo.tags.length > 0 || (todo.groupId && groupNameById.get(todo.groupId))) && (
+                            {isMobile && todo.tags.length > 0 && (
                               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '0 6px 6px 24px' }}>
                                 {todo.tags.map(tag => {
                                   const { bg, text } = tagColor(tag)
@@ -1611,11 +1590,6 @@ export default function NotebookTodo() {
                                     </span>
                                   )
                                 })}
-                                {todo.groupId && groupNameById.get(todo.groupId) && (
-                                  <span style={{ fontSize: 12, color: 'var(--muted)', background: 'oklch(97% 0.006 80)', borderRadius: 2, padding: '1px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <IconFolder size={13} color="var(--border)" /> {groupNameById.get(todo.groupId)}
-                                  </span>
-                                )}
                               </div>
                             )}
                           </div>
