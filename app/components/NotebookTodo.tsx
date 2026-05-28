@@ -1458,7 +1458,7 @@ export default function NotebookTodo() {
                   />
                 ) : (
                   <span
-                    style={{ flex: 1, cursor: 'text' }}
+                    style={{ flex: 1, cursor: 'text', fontFamily: 'var(--font-task)', fontSize: 14 }}
                     onDoubleClick={() => { setEditingGroupId(g.id); setEditingGroupName(g.name) }}
                     title="Double-click to rename"
                   >{g.name}</span>
@@ -1900,7 +1900,7 @@ export default function NotebookTodo() {
                   <div key={group.group.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 6px 4px', borderBottom: '1.5px solid rgba(196,218,245,0.8)', marginBottom: 2 }}>
                       <IconFolder size={18} color="var(--fg)" />
-                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, color: 'var(--fg)' }}>{group.group.name}</span>
+                      <span style={{ fontFamily: 'var(--font-task)', fontSize: 16, fontWeight: 400, color: 'var(--fg)' }}>{group.group.name}</span>
                       <span style={{ fontSize: 14, color: 'var(--muted)', marginLeft: 2 }}>({group.todos.length})</span>
                     </div>
                     <SortableContext items={group.todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
