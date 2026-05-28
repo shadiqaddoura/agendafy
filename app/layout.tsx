@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Caveat } from "next/font/google";
+import { Playpen_Sans } from "next/font/google";
 import "./globals.css";
 
-const caveat = Caveat({
-  variable: "--font-caveat",
+const playpenSans = Playpen_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
+  variable: "--font-task",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Agendafy — Notebook Todo",
-  description: "A beautiful notebook-style agenda and todo list",
+  title: "Agendafy — Editorial",
+  description: "A notebook-style daily planner for tasks, quick notes, and goals",
 };
 
 export default function RootLayout({
@@ -19,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${caveat.variable} h-full antialiased`}>
+    <html lang="en" className={`h-full antialiased ${playpenSans.variable}`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
