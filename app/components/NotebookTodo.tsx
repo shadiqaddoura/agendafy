@@ -602,8 +602,8 @@ export default function NotebookTodo() {
   const [editTagText, setEditTagText] = useState('')
   const [editTagDropdownOpen, setEditTagDropdownOpen] = useState(false)
   const [inlineAddFocused, setInlineAddFocused] = useState(false)
+  const [activeTab, setActiveTab] = useState<'today' | 'my-plan' | 'achievements'>('today')
   const [currentPage, setCurrentPage] = useState(todayStr())
-  const [showAchievementLogs, setShowAchievementLogs] = useState(false)
   const [quickNotes, setQuickNotes] = useState<QuickNote[]>([])
   const [quickNoteInput, setQuickNoteInput] = useState('')
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
@@ -1235,21 +1235,6 @@ export default function NotebookTodo() {
           >
             Sign out
           </button>
-          <button
-            onClick={() => setShowAchievementLogs(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: 14,
-              fontFamily: 'var(--font-body)',
-              color: 'var(--border)',
-              textDecoration: 'underline',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            {isMobile ? 'Achievements' : 'Achievement logs'}
-          </button>
 
         </div>
       </div>
@@ -1497,112 +1482,45 @@ export default function NotebookTodo() {
             position: 'relative',
           }}
         >
-          {showAchievementLogs && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 25,
-                background: 'var(--surface)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: isMobile ? '10px 12px 8px 12px' : '14px 32px 10px 28px',
-                  borderBottom: '1.5px solid var(--border)',
-                  flexShrink: 0,
-                  background: 'var(--surface)',
-                }}
-              >
-                <div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400, color: 'var(--fg)', lineHeight: 1.1 }}>
-                    Achievement logs
-                  </div>
-                  <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>
-                    All completed tasks across all days
-                  </div>
-                </div>
+
+          {/* Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: '1.5px solid var(--border)',
+              flexShrink: 0,
+              background: 'var(--surface)',
+            }}
+          >
+            {(['today', 'my-plan', 'achievements'] as const).map(tab => {
+              const label = tab === 'today' ? 'Today' : tab === 'my-plan' ? 'My Plan' : 'Achievements'
+              const isActive = activeTab === tab
+              return (
                 <button
-                  onClick={() => setShowAchievementLogs(false)}
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
                   style={{
-                    background: 'transparent',
-                    border: '1.5px solid var(--border)',
-                    borderRadius: 2,
-                    padding: '4px 14px',
-                    fontSize: 22,
+                    padding: '10px 28px',
+                    fontSize: 16,
                     fontFamily: 'var(--font-display)',
-                    color: 'var(--fg)',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: isActive ? '2.5px solid var(--fg)' : '2.5px solid transparent',
+                    color: isActive ? 'var(--fg)' : 'var(--muted)',
                     cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
+                    fontWeight: isActive ? 600 : 400,
+                    marginBottom: -1,
+                    transition: 'color 0.15s, border-color 0.15s',
                   }}
                 >
-                  <IconArrowLeft /> Back
+                  {label}
                 </button>
-              </div>
-
-              <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
-                {achievementSections.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 400, lineHeight: 2 }}>
-                    No completed tasks yet.
-                  </div>
-                ) : (
-                  achievementSections.map(([date, sectionTodos]) => (
-                    <div key={date || 'no-date'} style={{ marginBottom: 22 }}>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--fg)', marginBottom: 8, borderBottom: '1.5px solid var(--border)', paddingBottom: 4 }}>
-                        {date ? `${pageLabel(date)} · ${pageSubLabel(date)}` : 'No date'}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {sectionTodos.map(todo => (
-                          <div key={todo.id}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
-                              <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                              <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-task)', fontSize: 14, color: 'var(--muted)', textDecorationLine: 'line-through', textDecorationColor: 'rgba(107,203,119,0.5)', textDecorationThickness: 2, wordBreak: 'break-word' }}>
-                                {todo.text}
-                              </span>
-                              {!isMobile && todo.tags.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
-                                  {todo.tags.map(tag => {
-                                    const { bg, text } = tagColor(tag)
-                                    return (
-                                      <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '1px 7px', fontSize: 13, opacity: 0.7 }}>
-                                        #{tag}
-                                      </span>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                            {isMobile && todo.tags.length > 0 && (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '0 6px 6px 24px' }}>
-                                {todo.tags.map(tag => {
-                                  const { bg, text } = tagColor(tag)
-                                  return (
-                                    <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '1px 7px', fontSize: 13, opacity: 0.7 }}>
-                                      #{tag}
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+              )
+            })}
+          </div>
 
           {/* Page flip navigation */}
+          {activeTab === 'today' && (
           <div
             style={{
               display: 'flex',
@@ -1702,8 +1620,10 @@ export default function NotebookTodo() {
               Next <IconArrowRight />
             </button>
           </div>
+          )}
 
           {/* Scrollable content — only this area scrolls */}
+          {activeTab === 'today' ? (
           <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
 
           {isMobile && (
@@ -2157,6 +2077,83 @@ export default function NotebookTodo() {
           </div>
           {/* end scrollable content */}
           </div>
+          ) : activeTab === 'my-plan' ? (
+          /* My Plan tab — empty placeholder */
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '60px 32px',
+              color: 'var(--muted)',
+              gap: 16,
+            }}
+          >
+            <IconNotebook size={56} />
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 400, color: 'var(--fg)', textAlign: 'center' }}>
+              My Plan
+            </div>
+            <div style={{ fontSize: 17, color: 'var(--muted)', textAlign: 'center', maxWidth: 320, lineHeight: 1.6 }}>
+              Your personal plan will live here. Coming soon.
+            </div>
+          </div>
+          ) : (
+          /* Achievements tab */
+          <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
+            {achievementSections.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)', fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 400, lineHeight: 2 }}>
+                No completed tasks yet.
+              </div>
+            ) : (
+              achievementSections.map(([date, sectionTodos]) => (
+                <div key={date || 'no-date'} style={{ marginBottom: 22 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--fg)', marginBottom: 8, borderBottom: '1.5px solid var(--border)', paddingBottom: 4 }}>
+                    {date ? `${pageLabel(date)} · ${pageSubLabel(date)}` : 'No date'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {sectionTodos.map(todo => (
+                      <div key={todo.id}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34, padding: '3px 6px' }}>
+                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: PRIORITY_COLORS[todo.priority], flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                          <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-task)', fontSize: 14, color: 'var(--muted)', textDecorationLine: 'line-through', textDecorationColor: 'rgba(107,203,119,0.5)', textDecorationThickness: 2, wordBreak: 'break-word' }}>
+                            {todo.text}
+                          </span>
+                          {!isMobile && todo.tags.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, flexShrink: 0 }}>
+                              {todo.tags.map(tag => {
+                                const { bg, text } = tagColor(tag)
+                                return (
+                                  <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '1px 7px', fontSize: 13, opacity: 0.7 }}>
+                                    #{tag}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        {isMobile && todo.tags.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, padding: '0 6px 6px 24px' }}>
+                            {todo.tags.map(tag => {
+                              const { bg, text } = tagColor(tag)
+                              return (
+                                <span key={tag} style={{ background: bg, color: text, borderRadius: 2, padding: '1px 7px', fontSize: 13, opacity: 0.7 }}>
+                                  #{tag}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          )}
         </div>
 
         {/* Right panel — Quick Notes */}
