@@ -25,6 +25,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { createGoogleProvider, getFirebaseClientAuth } from '@/lib/firebase-client'
+import MyPlanSection from '@/app/components/MyPlanSection'
 
 type Priority = 'low' | 'medium' | 'high'
 
@@ -2078,28 +2079,7 @@ export default function NotebookTodo() {
           {/* end scrollable content */}
           </div>
           ) : activeTab === 'my-plan' ? (
-          /* My Plan tab — empty placeholder */
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '60px 32px',
-              color: 'var(--muted)',
-              gap: 16,
-            }}
-          >
-            <IconNotebook size={56} />
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 400, color: 'var(--fg)', textAlign: 'center' }}>
-              My Plan
-            </div>
-            <div style={{ fontSize: 17, color: 'var(--muted)', textAlign: 'center', maxWidth: 320, lineHeight: 1.6 }}>
-              Your personal plan will live here. Coming soon.
-            </div>
-          </div>
+          <MyPlanSection authedFetch={authedFetch} isMobile={isMobile} />
           ) : (
           /* Achievements tab */
           <div style={{ padding: isMobile ? '16px 12px 32px 12px' : '20px 32px 32px 28px', flex: 1, overflowY: 'auto' }}>
