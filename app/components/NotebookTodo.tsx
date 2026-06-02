@@ -131,6 +131,27 @@ function IconClose({ size = 11, color = 'currentColor' }: { size?: number; color
   )
 }
 
+function IconPencil({ size = 12, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 10.5 L1.5 12.5 L3.5 12 L11.5 4 L10 2.5 Z" />
+      <path d="M9 3.5 L10.5 5" />
+    </svg>
+  )
+}
+
+function IconTrash({ size = 12, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4 L12 4" />
+      <path d="M5 4 L5.5 2.5 L8.5 2.5 L9 4" />
+      <path d="M3.5 4 L4.2 12 L9.8 12 L10.5 4" />
+      <path d="M6 6.5 L6.2 10" />
+      <path d="M8 6.5 L7.8 10" />
+    </svg>
+  )
+}
+
 function IconFolder({ size = 17, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 18" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -595,6 +616,9 @@ export default function NotebookTodo() {
   const [inputTagText, setInputTagText] = useState('')
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false)
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
+  const [editingTag, setEditingTag] = useState<string | null>(null)
+  const [editingTagText, setEditingTagText] = useState('')
+  const [deleteConfirmTag, setDeleteConfirmTag] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const [editDate, setEditDate] = useState('')
@@ -942,6 +966,64 @@ export default function NotebookTodo() {
   function deleteTodo(id: string) {
     setTodos(prev => prev.filter(t => t.id !== id))
     authedFetch(`/api/todos/${id}`, { method: 'DELETE' }).catch(console.error)
+  }
+
+  function normalizeTag(raw: string) {
+    return raw.trim().toLowerCase().replace(/,/g, '')
+  }
+
+  function updateTodosWithTag(oldTag: string, updateTags: (tags: string[]) => string[]) {
+    const affected = todosRef.current
+      .filter(t => t.tags.includes(oldTag))
+      .map(t => ({ ...t, tags: updateTags(t.tags) }))
+
+    if (!affected.length) return
+
+    const updatedById = new Map(affected.map(t => [t.id, t]))
+    setTodos(prev => {
+      const next = prev.map(t => updatedById.get(t.id) ?? t)
+      todosRef.current = next
+      return next
+    })
+
+    affected.forEach(todo => {
+      authedFetch(`/api/todos/${todo.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(todo),
+      }).catch(console.error)
+    })
+  }
+
+  function startTagEdit(tag: string) {
+    setEditingTag(tag)
+    setEditingTagText(tag)
+    setDeleteConfirmTag(null)
+  }
+
+  function cancelTagEdit() {
+    setEditingTag(null)
+    setEditingTagText('')
+  }
+
+  function saveTagEdit(oldTag: string) {
+    const nextTag = normalizeTag(editingTagText)
+    if (!nextTag) return
+    if (nextTag === oldTag) {
+      cancelTagEdit()
+      return
+    }
+
+    updateTodosWithTag(oldTag, tags => [...new Set(tags.map(tag => tag === oldTag ? nextTag : tag))])
+    setActiveTagFilter(prev => prev === oldTag ? nextTag : prev)
+    cancelTagEdit()
+  }
+
+  function deleteTag(tag: string) {
+    updateTodosWithTag(tag, tags => tags.filter(t => t !== tag))
+    setActiveTagFilter(prev => prev === tag ? null : prev)
+    setDeleteConfirmTag(null)
+    if (editingTag === tag) cancelTagEdit()
   }
 
   function startEdit(todo: Todo) {
@@ -1366,24 +1448,123 @@ export default function NotebookTodo() {
                 {allTags.map(tag => {
                   const { bg, text } = tagColor(tag)
                   const active = activeTagFilter === tag
+                  const isEditingTag = editingTag === tag
+                  const isConfirmingDelete = deleteConfirmTag === tag
                   return (
-                    <button
+                    <div
                       key={tag}
-                      onClick={() => setActiveTagFilter(active ? null : tag)}
                       style={{
-                        background: active ? text : bg,
-                        color: active ? '#fff' : text,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        background: isEditingTag ? 'var(--surface)' : active ? text : bg,
+                        color: active && !isEditingTag ? '#fff' : text,
                         border: `1.5px solid ${text}`,
                         borderRadius: 2,
-                        padding: '3px 10px',
+                        padding: isEditingTag ? '2px 4px' : '0 3px 0 0',
                         fontSize: 14,
                         fontFamily: 'var(--font-body)',
-                        cursor: 'pointer',
                         transition: 'all 0.15s',
+                        minHeight: 28,
                       }}
                     >
-                      #{tag}
-                    </button>
+                      {isEditingTag ? (
+                        <>
+                          <span style={{ paddingLeft: 4, color: text }}>#</span>
+                          <input
+                            autoFocus
+                            value={editingTagText}
+                            onChange={e => setEditingTagText(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') saveTagEdit(tag)
+                              if (e.key === 'Escape') cancelTagEdit()
+                            }}
+                            style={{
+                              width: 86,
+                              minWidth: 0,
+                              border: 'none',
+                              borderBottom: `1.5px solid ${text}`,
+                              outline: 'none',
+                              background: 'transparent',
+                              color: text,
+                              fontSize: 14,
+                              fontFamily: 'var(--font-body)',
+                              padding: '2px 0',
+                            }}
+                          />
+                          <button
+                            onClick={() => saveTagEdit(tag)}
+                            title="Save tag"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, fontSize: 13, lineHeight: 1, padding: '2px 4px', fontFamily: 'var(--font-body)' }}
+                          >
+                            OK
+                          </button>
+                          <button
+                            onClick={cancelTagEdit}
+                            title="Cancel"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: text, lineHeight: 1, padding: '2px 3px', display: 'flex', alignItems: 'center' }}
+                          >
+                            <IconClose size={9} color={text} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setActiveTagFilter(active ? null : tag)}
+                            title={`Filter by #${tag}`}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: active ? '#fff' : text,
+                              padding: '3px 7px 3px 10px',
+                              fontSize: 14,
+                              fontFamily: 'var(--font-body)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            #{tag}
+                          </button>
+                          {isConfirmingDelete ? (
+                            <>
+                              <button
+                                onClick={() => deleteTag(tag)}
+                                title={`Delete #${tag}`}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? '#fff' : text, fontSize: 12, lineHeight: 1, padding: '3px 4px', fontFamily: 'var(--font-body)' }}
+                              >
+                                Del
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmTag(null)}
+                                title="Cancel"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? '#fff' : text, lineHeight: 1, padding: '3px 4px', display: 'flex', alignItems: 'center' }}
+                              >
+                                <IconClose size={9} color={active ? '#fff' : text} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => startTagEdit(tag)}
+                                title={`Edit #${tag}`}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? '#fff' : text, lineHeight: 1, padding: '3px 4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                              >
+                                <IconPencil size={11} color={active ? '#fff' : text} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeleteConfirmTag(tag)
+                                  cancelTagEdit()
+                                }}
+                                title={`Delete #${tag}`}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? '#fff' : text, lineHeight: 1, padding: '3px 4px', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                              >
+                                <IconTrash size={11} color={active ? '#fff' : text} />
+                              </button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   )
                 })}
               </div>
