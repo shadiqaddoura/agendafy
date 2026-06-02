@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     })
   } catch (err) {
     console.error('[GET /api/my-plan]', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -78,6 +78,6 @@ export async function PUT(req: Request) {
     })
   } catch (err) {
     console.error('[PUT /api/my-plan]', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

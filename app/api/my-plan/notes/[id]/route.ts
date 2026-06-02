@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { myPlanNotesCol } from '@/lib/firestore'
 import { getUserIdFromRequest } from '@/lib/auth'
+import { sanitizeNotebookHtml } from '@/lib/sanitize-notebook-html'
 
 const NOTE_KINDS = ['mission', 'vision', 'values', 'principles', 'goals', 'custom'] as const
 type NoteKind = (typeof NOTE_KINDS)[number]
@@ -57,7 +58,7 @@ export async function PATCH(
     }
 
     if ('contentHtml' in body) {
-      const contentHtml = normalize(body.contentHtml)
+      const contentHtml = sanitizeNotebookHtml(body.contentHtml)
       if (contentHtml.length > CONTENT_MAX) {
         return NextResponse.json({ error: `Content must be ${CONTENT_MAX} characters or fewer.` }, { status: 400 })
       }
@@ -72,7 +73,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true, id, ...patch })
   } catch (err) {
     console.error('[PATCH /api/my-plan/notes/:id]', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -100,6 +101,6 @@ export async function DELETE(
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[DELETE /api/my-plan/notes/:id]', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

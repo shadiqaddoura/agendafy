@@ -109,7 +109,8 @@ function sanitizeHtml(html: string) {
   const allowed = new Set(['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'a'])
 
   const walk = (node: ParentNode) => {
-    Array.from(node.childNodes).forEach(child => {
+    for (let i = 0; i < node.childNodes.length; i++) {
+      const child = node.childNodes[i]
       if (child.nodeType === Node.ELEMENT_NODE) {
         const el = child as HTMLElement
         const tag = el.tagName.toLowerCase()
@@ -118,7 +119,8 @@ function sanitizeHtml(html: string) {
           const parent = el.parentNode
           while (el.firstChild) parent?.insertBefore(el.firstChild, el)
           parent?.removeChild(el)
-          return
+          i -= 1
+          continue
         }
 
         Array.from(el.attributes).forEach(attr => {
@@ -137,7 +139,7 @@ function sanitizeHtml(html: string) {
       } else if (child.nodeType === Node.COMMENT_NODE) {
         child.remove()
       }
-    })
+    }
   }
 
   walk(doc.body)
@@ -714,20 +716,9 @@ function NotebookNoteCard({
   const lastSavedRef = useRef({ title: note.title, contentHtml: note.contentHtml, pinned: note.pinned, kind: note.kind })
 
   useEffect(() => {
-    setTitle(note.title)
-    setContentHtml(note.contentHtml)
-    setSaveState('idle')
-    setError(null)
-    lastSavedRef.current = {
-      title: note.title,
-      contentHtml: note.contentHtml,
-      pinned: note.pinned,
-      kind: note.kind,
-    }
-    if (editorRef.current && !focused) {
-      editorRef.current.innerHTML = note.contentHtml || emptyHtml()
-    }
-  }, [note.id, note.updatedAt])
+    lastSavedRef.current.pinned = note.pinned
+    lastSavedRef.current.kind = note.kind
+  }, [note.kind, note.pinned])
 
   useEffect(() => {
     if (!editorRef.current || focused) return
@@ -735,39 +726,6 @@ function NotebookNoteCard({
       editorRef.current.innerHTML = contentHtml || emptyHtml()
     }
   }, [contentHtml, focused])
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-
-    const trimmedTitle = normalizeText(title).trim()
-    const normalizedHtml = sanitizeHtml(contentHtml)
-    const changed =
-      trimmedTitle !== lastSavedRef.current.title ||
-      normalizedHtml !== lastSavedRef.current.contentHtml ||
-      note.pinned !== lastSavedRef.current.pinned ||
-      note.kind !== lastSavedRef.current.kind
-
-    if (!changed) {
-      setSaveState('idle')
-      return
-    }
-
-    if (!trimmedTitle) {
-      setSaveState('error')
-      setError('Title is required before saving.')
-      return
-    }
-
-    setSaveState('idle')
-    timerRef.current = setTimeout(() => {
-      void persist()
-    }, AUTOSAVE_DELAY)
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, contentHtml, note.pinned, note.kind])
 
   const persist = useCallback(async () => {
     const trimmedTitle = normalizeText(title).trim()
@@ -800,6 +758,28 @@ function NotebookNoteCard({
       setError(err instanceof Error ? err.message : 'Failed to save note')
     }
   }, [contentHtml, note.id, onSave, title])
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+
+    const trimmedTitle = normalizeText(title).trim()
+    const normalizedHtml = sanitizeHtml(contentHtml)
+    const changed =
+      trimmedTitle !== lastSavedRef.current.title ||
+      normalizedHtml !== lastSavedRef.current.contentHtml ||
+      note.pinned !== lastSavedRef.current.pinned ||
+      note.kind !== lastSavedRef.current.kind
+
+    if (!changed || !trimmedTitle) return
+
+    timerRef.current = setTimeout(() => {
+      void persist()
+    }, AUTOSAVE_DELAY)
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [contentHtml, note.kind, note.pinned, persist, title])
 
   const flushSave = () => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -916,6 +896,7 @@ function NotebookNoteCard({
         onChange={e => {
           setTitle(e.target.value)
           setError(null)
+          if (saveState === 'error') setSaveState('idle')
         }}
         onBlur={flushSave}
         maxLength={TITLE_MAX}
@@ -993,7 +974,7 @@ const RichTextField = (() => {
       if (editorRef.current.innerHTML !== next) {
         editorRef.current.innerHTML = next
       }
-    }, [active, value])
+    }, [active, editorRef, value])
 
     const handleInput = () => {
       const raw = editorRef.current?.innerHTML || emptyHtml()

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { myPlanNotesCol } from '@/lib/firestore'
 import { getUserIdFromRequest } from '@/lib/auth'
+import { sanitizeNotebookHtml } from '@/lib/sanitize-notebook-html'
 
 const NOTE_KINDS = ['mission', 'vision', 'values', 'principles', 'goals', 'custom'] as const
 type NoteKind = (typeof NOTE_KINDS)[number]
@@ -60,7 +61,7 @@ export async function GET(req: Request) {
     return NextResponse.json(notes)
   } catch (err) {
     console.error('[GET /api/my-plan/notes]', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const kind = isNoteKind(body.kind) ? body.kind : 'custom'
     const title = normalize(body.title) || defaultTitle(kind)
-    const contentHtml = normalize(body.contentHtml) || '<p><br></p>'
+    const contentHtml = sanitizeNotebookHtml(body.contentHtml)
     const pinned = typeof body.pinned === 'boolean' ? body.pinned : kind === 'mission' || kind === 'vision'
 
     if (title.length > TITLE_MAX) {
@@ -108,6 +109,6 @@ export async function POST(req: Request) {
     })
   } catch (err) {
     console.error('[POST /api/my-plan/notes]', err)
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
