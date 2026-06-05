@@ -8,6 +8,8 @@ type NoteKind = (typeof NOTE_KINDS)[number]
 
 const TITLE_MAX = 120
 const CONTENT_MAX = 12000
+const DESCRIPTION_MAX = 500
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 function normalize(value: unknown): string {
   return typeof value === 'string' ? value.replace(/\r\n/g, '\n').trim() : ''
@@ -67,6 +69,22 @@ export async function PATCH(
 
     if ('pinned' in body) {
       patch.pinned = Boolean(body.pinned)
+    }
+
+    if ('description' in body) {
+      const description = normalize(body.description).slice(0, DESCRIPTION_MAX)
+      patch.description = description
+    }
+
+    if ('dueDate' in body) {
+      const dueDate = typeof body.dueDate === 'string' && DATE_RE.test(body.dueDate) ? body.dueDate : ''
+      patch.dueDate = dueDate
+    }
+
+    if ('completed' in body) {
+      const completed = Boolean(body.completed)
+      patch.completed = completed
+      patch.completedAt = completed ? Date.now() : null
     }
 
     await docRef.update(patch)

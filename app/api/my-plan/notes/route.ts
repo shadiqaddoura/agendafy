@@ -8,6 +8,8 @@ type NoteKind = (typeof NOTE_KINDS)[number]
 
 const TITLE_MAX = 120
 const CONTENT_MAX = 12000
+const DESCRIPTION_MAX = 500
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 type NoteDoc = {
   id: string
@@ -77,6 +79,10 @@ export async function POST(req: Request) {
     const title = normalize(body.title) || defaultTitle(kind)
     const contentHtml = sanitizeNotebookHtml(body.contentHtml)
     const pinned = typeof body.pinned === 'boolean' ? body.pinned : kind === 'mission' || kind === 'vision'
+    const description = normalize(body.description).slice(0, DESCRIPTION_MAX)
+    const dueDate = typeof body.dueDate === 'string' && DATE_RE.test(body.dueDate) ? body.dueDate : ''
+    const completed = typeof body.completed === 'boolean' ? body.completed : false
+    const completedAt = completed ? (typeof body.completedAt === 'number' ? body.completedAt : Date.now()) : null
 
     if (title.length > TITLE_MAX) {
       return NextResponse.json({ error: `Title must be ${TITLE_MAX} characters or fewer.` }, { status: 400 })
@@ -93,6 +99,10 @@ export async function POST(req: Request) {
       title,
       contentHtml,
       pinned,
+      description,
+      dueDate,
+      completed,
+      completedAt,
       createdAt: now,
       updatedAt: now,
     })
@@ -104,6 +114,10 @@ export async function POST(req: Request) {
       title,
       contentHtml,
       pinned,
+      description,
+      dueDate,
+      completed,
+      completedAt,
       createdAt: now,
       updatedAt: now,
     })
