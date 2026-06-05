@@ -347,7 +347,6 @@ function PlanItemRow({
   }
 
   const handleDelete = () => {
-    if (!window.confirm(`Delete this ${item.kind}?`)) return
     void onDelete(item.id).catch(err => setActionError(err instanceof Error ? err.message : 'Delete failed'))
   }
 
