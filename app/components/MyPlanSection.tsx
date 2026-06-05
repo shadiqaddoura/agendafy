@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 
 type PlanKind = 'mission' | 'vision' | 'goals'
 
@@ -246,7 +246,8 @@ function InlineAddRow({
           )}
 
           <button
-            onMouseDown={e => { e.preventDefault(); void handleAdd() }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => void handleAdd()}
             disabled={saving || !title.trim()}
             style={{
               marginLeft: 'auto',
@@ -265,7 +266,8 @@ function InlineAddRow({
             {saving ? 'Adding...' : 'Add'}
           </button>
           <button
-            onMouseDown={e => { e.preventDefault(); reset() }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={reset}
             style={{
               background: 'none',
               border: '1.5px solid var(--border)',
@@ -376,9 +378,10 @@ function PlanItemRow({
 
         {/* Completion circle */}
         {hasComplete ? (
-          <div
+          <button
+            type="button"
             onClick={handleToggle}
-            title={item.completed ? 'Mark incomplete' : 'Mark complete'}
+            aria-label={item.completed ? 'Mark incomplete' : 'Mark complete'}
             style={{
               width: 22,
               height: 22,
@@ -391,10 +394,11 @@ function PlanItemRow({
               justifyContent: 'center',
               flexShrink: 0,
               transition: 'all 0.2s',
+              padding: 0,
             }}
           >
             {item.completed && <IconCheck size={14} />}
-          </div>
+          </button>
         ) : (
           /* Mission: just a spacer so text aligns with vision/goals */
           <div style={{ width: 22, flexShrink: 0 }} />
@@ -486,6 +490,7 @@ function PlanItemRow({
         {!editing && (
           <button
             onClick={handleDelete}
+            aria-label="Delete"
             title="Delete"
             style={{
               background: 'none',
@@ -564,7 +569,8 @@ function PlanItemRow({
           )}
 
           <button
-            onMouseDown={e => { e.preventDefault(); void handleSave() }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => void handleSave()}
             disabled={saving || !editTitle.trim()}
             style={{
               marginLeft: 'auto',
@@ -583,7 +589,8 @@ function PlanItemRow({
             {saving ? 'Saving...' : 'Save'}
           </button>
           <button
-            onMouseDown={e => { e.preventDefault(); cancelEdit() }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={cancelEdit}
             style={{
               background: 'none',
               border: '1.5px solid var(--border)',
@@ -857,7 +864,7 @@ export default function MyPlanSection({ authedFetch, isMobile = false }: MyPlanS
   const visions = items.filter(i => i.kind === 'vision')
   const goals = items.filter(i => i.kind === 'goals')
 
-  const contentStyle: React.CSSProperties = {
+  const contentStyle: CSSProperties = {
     flex: 1,
     overflowY: 'auto',
     padding: isMobile ? '16px 12px 32px' : '20px 32px 32px 28px',

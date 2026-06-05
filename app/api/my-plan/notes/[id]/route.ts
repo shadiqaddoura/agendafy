@@ -77,14 +77,19 @@ export async function PATCH(
     }
 
     if ('dueDate' in body) {
-      const dueDate = typeof body.dueDate === 'string' && DATE_RE.test(body.dueDate) ? body.dueDate : ''
-      patch.dueDate = dueDate
+      const rawDueDate = body.dueDate
+      if (rawDueDate !== '' && (typeof rawDueDate !== 'string' || !DATE_RE.test(rawDueDate))) {
+        return NextResponse.json({ error: 'dueDate must be a YYYY-MM-DD string or empty.' }, { status: 400 })
+      }
+      patch.dueDate = typeof rawDueDate === 'string' && DATE_RE.test(rawDueDate) ? rawDueDate : ''
     }
 
     if ('completed' in body) {
-      const completed = Boolean(body.completed)
-      patch.completed = completed
-      patch.completedAt = completed ? Date.now() : null
+      if (typeof body.completed !== 'boolean') {
+        return NextResponse.json({ error: 'completed must be a boolean.' }, { status: 400 })
+      }
+      patch.completed = body.completed
+      patch.completedAt = body.completed ? Date.now() : null
     }
 
     await docRef.update(patch)
