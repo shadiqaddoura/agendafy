@@ -79,14 +79,17 @@ export async function POST(req: Request) {
     const title = normalize(body.title) || defaultTitle(kind)
     const contentHtml = sanitizeNotebookHtml(body.contentHtml)
     const pinned = typeof body.pinned === 'boolean' ? body.pinned : kind === 'mission' || kind === 'vision'
-    const description = normalize(body.description).slice(0, DESCRIPTION_MAX)
+    const description = normalize(body.description)
+    if (description.length > DESCRIPTION_MAX) {
+      return NextResponse.json({ error: `Description must be ${DESCRIPTION_MAX} characters or fewer.` }, { status: 400 })
+    }
     const rawDueDate = body.dueDate
     if (rawDueDate !== undefined && rawDueDate !== '' && (typeof rawDueDate !== 'string' || !DATE_RE.test(rawDueDate))) {
       return NextResponse.json({ error: 'dueDate must be a YYYY-MM-DD string or empty.' }, { status: 400 })
     }
     const dueDate = typeof rawDueDate === 'string' && DATE_RE.test(rawDueDate) ? rawDueDate : ''
     const completed = typeof body.completed === 'boolean' ? body.completed : false
-    const completedAt = completed ? (typeof body.completedAt === 'number' ? body.completedAt : Date.now()) : null
+    const completedAt = completed ? Date.now() : null
 
     if (title.length > TITLE_MAX) {
       return NextResponse.json({ error: `Title must be ${TITLE_MAX} characters or fewer.` }, { status: 400 })

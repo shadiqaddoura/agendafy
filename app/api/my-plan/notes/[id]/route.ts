@@ -72,7 +72,10 @@ export async function PATCH(
     }
 
     if ('description' in body) {
-      const description = normalize(body.description).slice(0, DESCRIPTION_MAX)
+      const description = normalize(body.description)
+      if (description.length > DESCRIPTION_MAX) {
+        return NextResponse.json({ error: `Description must be ${DESCRIPTION_MAX} characters or fewer.` }, { status: 400 })
+      }
       patch.description = description
     }
 

@@ -126,9 +126,11 @@ function InlineAddRow({
     if (dueDate && !DATE_RE.test(dueDate)) { setTitleError('Invalid date format'); return }
     setSaving(true)
     try {
-      await onAdd({ kind, title: trimmed, description: description.trim().slice(0, DESCRIPTION_MAX), dueDate, completed: false, completedAt: null })
+      await onAdd({ kind, title: trimmed, description: description.trim(), dueDate, completed: false, completedAt: null })
       reset()
       inputRef.current?.focus()
+    } catch (err) {
+      setTitleError(err instanceof Error ? err.message : 'Failed to add. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -172,7 +174,7 @@ function InlineAddRow({
           value={title}
           onChange={e => { setTitle(e.target.value); setTitleError('') }}
           onFocus={() => setFocused(true)}
-          onBlur={() => { if (!title.trim()) reset() }}
+          onBlur={() => { if (!title.trim()) { reset() } else { setFocused(false) } }}
           onKeyDown={e => {
             if (e.key === 'Enter') void handleAdd()
             if (e.key === 'Escape') { reset() }
@@ -311,6 +313,7 @@ function PlanItemRow({
   const [saving, setSaving] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
+  const lastTapRef = useRef<number>(0)
 
   const hasComplete = item.kind === 'vision' || item.kind === 'goals'
   const hasDateField = item.kind === 'vision' || item.kind === 'goals'
@@ -323,6 +326,15 @@ function PlanItemRow({
     setTitleError('')
     setEditing(true)
     setTimeout(() => editInputRef.current?.focus(), 0)
+  }
+
+  const handleTap = (e: React.TouchEvent) => {
+    const now = Date.now()
+    if (now - lastTapRef.current < 300) {
+      e.preventDefault()
+      if (!item.completed && !editing) startEdit()
+    }
+    lastTapRef.current = now
   }
 
   const cancelEdit = () => {
@@ -338,7 +350,7 @@ function PlanItemRow({
     if (editDueDate && !DATE_RE.test(editDueDate)) { setTitleError('Invalid date format'); return }
     setSaving(true)
     try {
-      await onEdit(item.id, { title: trimmed, description: editDescription.trim().slice(0, DESCRIPTION_MAX), dueDate: editDueDate })
+      await onEdit(item.id, { title: trimmed, description: editDescription.trim(), dueDate: editDueDate })
       setEditing(false)
       setActionError(null)
     } catch (err) {
@@ -430,6 +442,7 @@ function PlanItemRow({
         ) : (
           <span
             onDoubleClick={() => !item.completed && startEdit()}
+            onTouchEnd={handleTap}
             style={{
               flex: 1,
               minWidth: 0,
@@ -659,6 +672,20 @@ function PlanItemRow({
               ✓ {formatCompletedAt(item.completedAt)}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Action error (delete/toggle failures) — always visible */}
+      {actionError && !editing && (
+        <div
+          style={{
+            padding: '3px 6px 6px 56px',
+            borderBottom: '1px solid var(--border)',
+            fontSize: 12,
+            color: '#a23d52',
+          }}
+        >
+          {actionError}
         </div>
       )}
     </div>
