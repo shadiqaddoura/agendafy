@@ -27,20 +27,17 @@ const TITLE_MAX = 120
 const DESCRIPTION_MAX = 500
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-const SECTION_META: Record<PlanKind, { label: string; accent: string; placeholder: string }> = {
+const SECTION_META: Record<PlanKind, { label: string; placeholder: string }> = {
   mission: {
     label: 'Mission',
-    accent: 'oklch(56% 0.13 25)',
     placeholder: '＋  Write a mission statement...',
   },
   vision: {
     label: 'Vision',
-    accent: 'oklch(56% 0.11 255)',
     placeholder: '＋  Write a vision statement...',
   },
   goals: {
     label: 'Goals',
-    accent: 'oklch(56% 0.12 85)',
     placeholder: '＋  Write a goal...',
   },
 }
@@ -142,6 +139,13 @@ function InlineAddRow({
         background: focused ? 'rgba(255,255,255,0.6)' : 'transparent',
         transition: 'background 0.2s',
       }}
+      onFocus={() => setFocused(true)}
+      onBlur={e => {
+        // Keep open if focus moves to another element within this add-row
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return
+        if (!title.trim()) reset()
+        else setFocused(false)
+      }}
     >
       {/* Main input line */}
       <div
@@ -173,8 +177,6 @@ function InlineAddRow({
           type="text"
           value={title}
           onChange={e => { setTitle(e.target.value); setTitleError('') }}
-          onFocus={() => setFocused(true)}
-          onBlur={() => { if (!title.trim()) { reset() } else { setFocused(false) } }}
           onKeyDown={e => {
             if (e.key === 'Enter') void handleAdd()
             if (e.key === 'Escape') { reset() }
