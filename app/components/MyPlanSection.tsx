@@ -1,1078 +1,936 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 
-type NoteKind = 'mission' | 'vision' | 'values' | 'principles' | 'goals' | 'custom'
-type NoteFilter = 'all' | 'pinned' | NoteKind
+type PlanKind = 'mission' | 'vision' | 'goals'
 
-type NotebookNote = {
+type PlanItem = {
   id: string
-  kind: NoteKind
+  kind: PlanKind
   title: string
-  contentHtml: string
-  pinned: boolean
+  description: string
+  dueDate: string       // 'YYYY-MM-DD' or ''
+  completed: boolean
+  completedAt: number | null
   createdAt: number
   updatedAt: number
 }
 
-type NotebookNoteResponse = Partial<NotebookNote> & {
-  error?: string
-}
+type PlanItemResponse = Partial<PlanItem> & { error?: string }
 
 type MyPlanSectionProps = {
   authedFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
   isMobile?: boolean
 }
 
-type SaveState = 'idle' | 'loading' | 'saving' | 'saved' | 'error'
+const TITLE_MAX = 120
+const DESCRIPTION_MAX = 500
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-type NoteMeta = {
-  label: string
-  title: string
-  placeholder: string
-  accent: string
-  defaultPinned: boolean
-}
-
-const NOTE_META: Record<NoteKind, NoteMeta> = {
+const SECTION_META: Record<PlanKind, { label: string; placeholder: string }> = {
   mission: {
     label: 'Mission',
-    title: 'Mission',
-    placeholder: 'Write the purpose that guides your work and daily choices...',
-    accent: 'oklch(56% 0.13 25)',
-    defaultPinned: true,
+    placeholder: '＋  Write a mission statement...',
   },
   vision: {
     label: 'Vision',
-    title: 'Vision',
-    placeholder: 'Describe the future you are building toward...',
-    accent: 'oklch(56% 0.11 255)',
-    defaultPinned: true,
-  },
-  values: {
-    label: 'Core Values',
-    title: 'Core Values',
-    placeholder: 'List the values that should shape how you live and decide...',
-    accent: 'oklch(56% 0.12 150)',
-    defaultPinned: false,
-  },
-  principles: {
-    label: 'Personal Principles',
-    title: 'Personal Principles',
-    placeholder: 'Write the rules you want to live by, especially when life gets noisy...',
-    accent: 'oklch(56% 0.12 305)',
-    defaultPinned: false,
+    placeholder: '＋  Write a vision statement...',
   },
   goals: {
-    label: 'Life Goals',
-    title: 'Life Goals',
-    placeholder: 'Capture the big outcomes and milestones you want to pursue...',
-    accent: 'oklch(56% 0.12 85)',
-    defaultPinned: false,
-  },
-  custom: {
-    label: 'Note',
-    title: 'New Note',
-    placeholder: 'Start writing...',
-    accent: 'oklch(56% 0.08 215)',
-    defaultPinned: false,
+    label: 'Goals',
+    placeholder: '＋  Write a goal...',
   },
 }
 
-const KIND_OPTIONS: NoteKind[] = ['mission', 'vision', 'values', 'principles', 'goals', 'custom']
-const TITLE_MAX = 120
-const AUTOSAVE_DELAY = 800
-
-function defaultTitle(kind: NoteKind) {
-  return NOTE_META[kind].title
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function normalizeText(value: string) {
-  return value.replace(/\r\n/g, '\n')
+function formatCompletedAt(ts: number | null): string {
+  if (!ts) return ''
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function emptyHtml() {
-  return '<p><br></p>'
+function isPast(dateStr: string): boolean {
+  if (!dateStr) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return new Date(dateStr + 'T00:00:00') < today
 }
 
-function isEmptyHtml(html: string) {
-  return htmlToPlainText(html).length === 0
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function IconCheck({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 7.5 C3.5 9.2 4.8 10.5 5.5 11 C7 8.5 9.5 5.8 12 3.5" />
+    </svg>
+  )
 }
 
-function htmlToPlainText(html: string) {
-  const doc = new DOMParser().parseFromString(html || '', 'text/html')
-  return (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
+function IconClose({ size = 10, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 11 11" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+      <path d="M2 2 L9 9" />
+      <path d="M9 2 L2 9" />
+    </svg>
+  )
 }
 
-function sanitizeHtml(html: string) {
-  const doc = new DOMParser().parseFromString(html || '', 'text/html')
-  const allowed = new Set(['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'a'])
+function IconFolder({ size = 17, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 18" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 5.5 L1.5 15 C1.5 15.8 2.2 16.5 3 16.5 L17 16.5 C17.8 16.5 18.5 15.8 18.5 15 L18.5 7.5 C18.5 6.7 17.8 6 17 6 L9.5 6 L7.5 4 L3 4 C2.2 4 1.5 4.7 1.5 5.5 Z" />
+    </svg>
+  )
+}
 
-  const walk = (node: ParentNode) => {
-    for (let i = 0; i < node.childNodes.length; i++) {
-      const child = node.childNodes[i]
-      if (child.nodeType === Node.ELEMENT_NODE) {
-        const el = child as HTMLElement
-        const tag = el.tagName.toLowerCase()
+// ─── Inline Add Row ───────────────────────────────────────────────────────────
 
-        if (!allowed.has(tag)) {
-          const parent = el.parentNode
-          while (el.firstChild) parent?.insertBefore(el.firstChild, el)
-          parent?.removeChild(el)
-          i -= 1
-          continue
-        }
+function InlineAddRow({
+  kind,
+  onAdd,
+  isMobile,
+}: {
+  kind: PlanKind
+  onAdd: (item: Omit<PlanItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
+  isMobile: boolean
+}) {
+  const [focused, setFocused] = useState(false)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [dueDate, setDueDate] = useState('')
+  const [titleError, setTitleError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const hasDateField = kind === 'vision' || kind === 'goals'
+  const meta = SECTION_META[kind]
 
-        Array.from(el.attributes).forEach(attr => {
-          if (tag === 'a' && attr.name === 'href') return
-          el.removeAttribute(attr.name)
-        })
-
-        if (tag === 'a') {
-          const href = (el.getAttribute('href') || '').trim()
-          if (!/^https?:\/\/|^mailto:|^\/|^#/i.test(href)) {
-            el.removeAttribute('href')
-          }
-        }
-
-        walk(el)
-      } else if (child.nodeType === Node.COMMENT_NODE) {
-        child.remove()
-      }
-    }
+  const reset = () => {
+    setTitle('')
+    setDescription('')
+    setDueDate('')
+    setTitleError('')
+    setFocused(false)
   }
 
-  walk(doc.body)
-
-  const cleaned = doc.body.innerHTML.trim()
-  return cleaned || emptyHtml()
-}
-
-function sortNotes(notes: NotebookNote[]) {
-  return [...notes].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    const aStamp = a.updatedAt || a.createdAt
-    const bStamp = b.updatedAt || b.createdAt
-    if (aStamp !== bStamp) return bStamp - aStamp
-    return b.createdAt - a.createdAt
-  })
-}
-
-function noteMatchesQuery(note: NotebookNote, query: string) {
-  if (!query) return true
-  const haystack = [
-    note.title,
-    NOTE_META[note.kind].label,
-    htmlToPlainText(note.contentHtml),
-  ]
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(query)
-}
-
-function formatSavedAt(timestamp: number | null) {
-  if (!timestamp) return 'Saved'
-  return `Saved ${new Date(timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
-}
-
-export default function MyPlanSection({ authedFetch, isMobile = false }: MyPlanSectionProps) {
-  const [notes, setNotes] = useState<NotebookNote[]>([])
-  const [status, setStatus] = useState<SaveState>('loading')
-  const [error, setError] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<NoteFilter>('all')
-  const [composerKind, setComposerKind] = useState<NoteKind>('custom')
-  const [composerTitle, setComposerTitle] = useState('')
-  const [creating, setCreating] = useState(false)
-
-  const notesRef = useRef(notes)
-  const queryLower = query.trim().toLowerCase()
-
-  useEffect(() => {
-    notesRef.current = notes
-  }, [notes])
-
-  const loadNotes = useCallback(async () => {
-    setStatus('loading')
-    setError(null)
-
-    const response = await authedFetch('/api/my-plan/notes')
-    const data = (await response.json()) as NotebookNoteResponse[] | { error?: string }
-
-    if (!response.ok) {
-      const errorBody = data as { error?: string }
-      throw new Error(errorBody.error ?? 'Failed to load your notebook')
+  const handleAdd = async () => {
+    const trimmed = title.trim()
+    if (!trimmed) { setTitleError('Title is required'); return }
+    if (trimmed.length > TITLE_MAX) { setTitleError(`Max ${TITLE_MAX} characters`); return }
+    if (dueDate && !DATE_RE.test(dueDate)) { setTitleError('Invalid date format'); return }
+    setSaving(true)
+    try {
+      await onAdd({ kind, title: trimmed, description: description.trim(), dueDate, completed: false, completedAt: null })
+      reset()
+      inputRef.current?.focus()
+    } catch (err) {
+      setTitleError(err instanceof Error ? err.message : 'Failed to add. Please try again.')
+    } finally {
+      setSaving(false)
     }
-
-    const loaded = Array.isArray(data)
-      ? data
-          .filter((note): note is NotebookNoteResponse => Boolean(note && typeof note === 'object'))
-          .map(note => ({
-            id: typeof note.id === 'string' ? note.id : crypto.randomUUID(),
-            kind: (typeof note.kind === 'string' && note.kind in NOTE_META ? note.kind : 'custom') as NoteKind,
-            title: typeof note.title === 'string' ? note.title : defaultTitle('custom'),
-            contentHtml: typeof note.contentHtml === 'string' ? sanitizeHtml(note.contentHtml) : emptyHtml(),
-            pinned: Boolean(note.pinned),
-            createdAt: typeof note.createdAt === 'number' ? note.createdAt : Date.now(),
-            updatedAt: typeof note.updatedAt === 'number' ? note.updatedAt : Date.now(),
-          }))
-      : []
-
-    setNotes(sortNotes(loaded))
-    setStatus('idle')
-  }, [authedFetch])
-
-  useEffect(() => {
-    let cancelled = false
-
-    void (async () => {
-      try {
-        await loadNotes()
-      } catch (err) {
-        if (cancelled) return
-        setStatus('error')
-        setError(err instanceof Error ? err.message : 'Failed to load your notebook')
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [loadNotes])
-
-  const createNote = useCallback(async (kind: NoteKind, title?: string) => {
-    const resolvedTitle = normalizeText(title ?? defaultTitle(kind)).trim() || defaultTitle(kind)
-    setCreating(true)
-    setError(null)
-
-    const response = await authedFetch('/api/my-plan/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        kind,
-        title: resolvedTitle,
-        contentHtml: emptyHtml(),
-        pinned: NOTE_META[kind].defaultPinned,
-      }),
-    })
-
-    const data = (await response.json()) as NotebookNoteResponse
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to create note')
-    }
-
-    const created: NotebookNote = {
-      id: typeof data.id === 'string' ? data.id : crypto.randomUUID(),
-      kind: (typeof data.kind === 'string' && data.kind in NOTE_META ? data.kind : kind) as NoteKind,
-      title: typeof data.title === 'string' ? data.title : resolvedTitle,
-      contentHtml: typeof data.contentHtml === 'string' ? sanitizeHtml(data.contentHtml) : emptyHtml(),
-      pinned: Boolean(data.pinned ?? NOTE_META[kind].defaultPinned),
-      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
-      updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
-    }
-
-    setNotes(prev => sortNotes([created, ...prev]))
-    setComposerTitle('')
-    setComposerKind('custom')
-    return created
-  }, [authedFetch])
-
-  const updateNote = useCallback(async (id: string, patch: Partial<Pick<NotebookNote, 'kind' | 'title' | 'contentHtml' | 'pinned'>>) => {
-    const current = notesRef.current.find(note => note.id === id)
-    if (!current) throw new Error('Note not found')
-
-    const payload: Record<string, unknown> = {}
-    if (patch.kind !== undefined) payload.kind = patch.kind
-    if (patch.title !== undefined) payload.title = normalizeText(patch.title)
-    if (patch.contentHtml !== undefined) payload.contentHtml = sanitizeHtml(patch.contentHtml)
-    if (patch.pinned !== undefined) payload.pinned = patch.pinned
-
-    const response = await authedFetch(`/api/my-plan/notes/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-
-    const data = (await response.json()) as NotebookNoteResponse
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to save note')
-    }
-
-    const updated: NotebookNote = {
-      ...current,
-      updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
-    }
-    if (typeof data.kind === 'string' && data.kind in NOTE_META) updated.kind = data.kind as NoteKind
-    if (typeof data.title === 'string') updated.title = data.title
-    if (typeof data.contentHtml === 'string') updated.contentHtml = sanitizeHtml(data.contentHtml)
-    if (typeof data.pinned === 'boolean') updated.pinned = data.pinned
-
-    setNotes(prev => sortNotes(prev.map(note => (note.id === id ? updated : note))))
-    return updated
-  }, [authedFetch])
-
-  const deleteNote = useCallback(async (id: string) => {
-    const current = notesRef.current.find(note => note.id === id)
-    if (!current) return
-
-    const response = await authedFetch(`/api/my-plan/notes/${id}`, { method: 'DELETE' })
-    const data = (await response.json()) as NotebookNoteResponse
-    if (!response.ok) {
-      throw new Error(data.error ?? 'Failed to delete note')
-    }
-
-    setNotes(prev => prev.filter(note => note.id !== id))
-  }, [authedFetch])
-
-  const togglePin = useCallback(async (id: string, nextPinned: boolean) => {
-    return updateNote(id, { pinned: nextPinned })
-  }, [updateNote])
-
-  const visibleNotes = useMemo(() => {
-    return sortNotes(
-      notes.filter(note => {
-        if (activeFilter === 'pinned' && !note.pinned) return false
-        if (activeFilter !== 'all' && activeFilter !== 'pinned' && note.kind !== activeFilter) return false
-        return noteMatchesQuery(note, queryLower)
-      })
-    )
-  }, [activeFilter, notes, queryLower])
-
-  const pinnedCount = notes.filter(note => note.pinned).length
-  const missionCount = notes.filter(note => note.kind === 'mission').length
-  const visionCount = notes.filter(note => note.kind === 'vision').length
-
-  const retryLoad = () => {
-    void loadNotes().catch(err => {
-      setStatus('error')
-      setError(err instanceof Error ? err.message : 'Failed to load your notebook')
-    })
-  }
-
-  const addTemplate = (kind: NoteKind) => {
-    void createNote(kind).catch(err => {
-      setCreating(false)
-      setError(err instanceof Error ? err.message : 'Failed to create note')
-    }).finally(() => setCreating(false))
-  }
-
-  const addCustomNote = () => {
-    const title = composerTitle.trim() || defaultTitle(composerKind)
-    void createNote(composerKind, title).catch(err => {
-      setCreating(false)
-      setError(err instanceof Error ? err.message : 'Failed to create note')
-    }).finally(() => setCreating(false))
   }
 
   return (
     <div
       style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: isMobile ? '12px 12px 28px' : '20px 28px 32px',
-        background: 'var(--bg)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
+        background: focused ? 'rgba(255,255,255,0.6)' : 'transparent',
+        transition: 'background 0.2s',
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={e => {
+        // Keep open if focus moves to another element within this add-row
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return
+        if (!title.trim()) reset()
+        else setFocused(false)
       }}
     >
+      {/* Main input line */}
       <div
         style={{
-          background: 'var(--surface)',
-          border: '1.5px solid var(--border)',
-          borderRadius: 2,
-          padding: isMobile ? '14px 14px 12px' : '18px 20px',
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'space-between',
-          gap: 12,
-          alignItems: isMobile ? 'flex-start' : 'center',
+          alignItems: 'center',
+          gap: 10,
+          padding: '8px 6px',
+          borderBottom: '1px solid var(--border)',
+          cursor: 'text',
         }}
+        onClick={() => inputRef.current?.focus()}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-            Mission & Vision Notebook
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: isMobile ? 24 : 30, lineHeight: 1.1, color: 'var(--fg)' }}>
-            A place to keep your direction, principles, and long-term goals visible.
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <StatPill label="Notes" value={notes.length} />
-          <StatPill label="Pinned" value={pinnedCount} />
-          <StatPill label="Mission" value={missionCount} />
-          <StatPill label="Vision" value={visionCount} />
-        </div>
-      </div>
-
-      {error && (
+        {/* Spacer matching drag-handle width */}
+        <div style={{ width: 18, flexShrink: 0 }} />
+        {/* Dashed empty circle */}
         <div
           style={{
-            border: '1px solid rgba(239,71,111,0.25)',
-            background: 'rgba(239,71,111,0.08)',
-            color: '#a23d52',
-            borderRadius: 2,
-            padding: '10px 12px',
-            fontSize: 14,
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            border: `2px dashed #4db86a`,
+            flexShrink: 0,
+            opacity: 0.4,
+          }}
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={title}
+          onChange={e => { setTitle(e.target.value); setTitleError('') }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') void handleAdd()
+            if (e.key === 'Escape') { reset() }
+          }}
+          placeholder={meta.placeholder}
+          maxLength={TITLE_MAX}
+          style={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            fontSize: isMobile ? 17 : 20,
+            fontFamily: 'var(--font-display)',
+            color: focused ? 'var(--fg)' : 'var(--border)',
+          }}
+        />
+      </div>
+
+      {/* Metadata row — shown when focused */}
+      {focused && (
+        <div
+          style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: isMobile ? '8px 10px' : '8px 50px',
+            borderBottom: '1px solid var(--border)',
             flexWrap: 'wrap',
           }}
         >
-          <span>{error}</span>
-          <button
-            onClick={retryLoad}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(162,61,82,0.35)',
-              borderRadius: 2,
-              padding: '6px 10px',
-              fontSize: 13,
-              color: '#a23d52',
-              cursor: 'pointer',
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      <div
-        style={{
-          background: 'var(--surface)',
-          border: '1.5px solid var(--border)',
-          borderRadius: 2,
-          padding: isMobile ? '12px' : '14px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 10, alignItems: isMobile ? 'stretch' : 'center' }}>
           <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search your notebook..."
+            type="text"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Description (optional)..."
+            maxLength={DESCRIPTION_MAX}
             style={{
-              flex: 1,
-              border: '1.5px solid var(--border)',
-              borderRadius: 2,
-              background: 'transparent',
-              padding: '10px 12px',
-              fontSize: 16,
-              color: 'var(--fg)',
-              outline: 'none',
-              fontFamily: 'var(--font-body)',
-            }}
-          />
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            {visibleNotes.length} shown
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {([
-            ['all', 'All'],
-            ['pinned', 'Pinned'],
-            ...KIND_OPTIONS.map(kind => [kind, NOTE_META[kind].label] as const),
-          ] as const).map(([value, label]) => {
-            const active = activeFilter === value
-            return (
-              <button
-                key={value}
-                onClick={() => setActiveFilter(value)}
-                style={{
-                  background: active ? 'var(--fg)' : 'transparent',
-                  color: active ? 'var(--surface)' : 'var(--muted)',
-                  border: `1.5px solid ${active ? 'var(--fg)' : 'var(--border)'}`,
-                  borderRadius: 2,
-                  padding: '5px 10px',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 8,
-        }}
-      >
-        {(['mission', 'vision', 'values', 'principles', 'goals'] as NoteKind[]).map(kind => (
-          <button
-            key={kind}
-            onClick={() => addTemplate(kind)}
-            disabled={creating}
-            style={{
-              background: NOTE_META[kind].accent,
-              color: 'white',
+              flex: '1 1 180px',
               border: 'none',
-              borderRadius: 2,
-              padding: '8px 12px',
+              borderBottom: '1.5px dashed var(--border)',
+              outline: 'none',
+              background: 'transparent',
               fontSize: 14,
               fontFamily: 'var(--font-body)',
-              cursor: creating ? 'not-allowed' : 'pointer',
-              opacity: creating ? 0.65 : 1,
-            }}
-          >
-            + {NOTE_META[kind].label}
-          </button>
-        ))}
-      </div>
-
-      <div
-        style={{
-          background: 'var(--surface)',
-          border: '1.5px solid var(--border)',
-          borderRadius: 2,
-          padding: isMobile ? '14px' : '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--fg)' }}>
-              New note
-            </div>
-            <div style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.5 }}>
-              Create a notebook page entry, then write the long form directly inside the card.
-            </div>
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            Autosaves note cards as you write.
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '180px 1fr auto', gap: 10, alignItems: 'center' }}>
-          <select
-            value={composerKind}
-            onChange={e => setComposerKind(e.target.value as NoteKind)}
-            style={{
-              border: '1.5px solid var(--border)',
-              borderRadius: 2,
-              padding: '10px 12px',
-              background: 'transparent',
-              color: 'var(--fg)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 15,
-              cursor: 'pointer',
-            }}
-          >
-            {KIND_OPTIONS.map(kind => (
-              <option key={kind} value={kind}>
-                {NOTE_META[kind].label}
-              </option>
-            ))}
-          </select>
-
-          <input
-            value={composerTitle}
-            onChange={e => setComposerTitle(e.target.value)}
-            placeholder={NOTE_META[composerKind].title}
-            maxLength={TITLE_MAX}
-            style={{
-              border: '1.5px solid var(--border)',
-              borderRadius: 2,
-              padding: '10px 12px',
-              background: 'transparent',
-              color: 'var(--fg)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 15,
-              outline: 'none',
+              color: 'var(--muted)',
+              padding: '2px 4px',
             }}
           />
 
+          {hasDateField && (
+            <input
+              type="date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+              style={{
+                border: 'none',
+                borderBottom: '1.5px dashed var(--border)',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 14,
+                fontFamily: 'var(--font-body)',
+                color: 'var(--muted)',
+                padding: '2px 4px',
+                cursor: 'pointer',
+              }}
+            />
+          )}
+
+          {titleError && (
+            <span style={{ fontSize: 12, color: '#a23d52', alignSelf: 'center' }}>{titleError}</span>
+          )}
+
           <button
-            onClick={addCustomNote}
-            disabled={creating}
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => void handleAdd()}
+            disabled={saving || !title.trim()}
             style={{
+              marginLeft: 'auto',
               background: 'var(--fg)',
               color: 'var(--surface)',
               border: 'none',
               borderRadius: 2,
-              padding: '10px 16px',
+              padding: '6px 20px',
               fontSize: 15,
               fontFamily: 'var(--font-body)',
-              cursor: creating ? 'not-allowed' : 'pointer',
-              opacity: creating ? 0.65 : 1,
+              cursor: title.trim() && !saving ? 'pointer' : 'not-allowed',
+              opacity: title.trim() && !saving ? 1 : 0.4,
+              flexShrink: 0,
             }}
           >
-            Add note
+            {saving ? 'Adding...' : 'Add'}
           </button>
-        </div>
-      </div>
-
-      {status === 'loading' ? (
-        <div
-          style={{
-            background: 'var(--surface)',
-            border: '1.5px dashed var(--border)',
-            borderRadius: 2,
-            padding: '22px',
-            color: 'var(--muted)',
-            fontFamily: 'var(--font-display)',
-            fontSize: 20,
-          }}
-        >
-          Opening your notebook...
-        </div>
-      ) : visibleNotes.length === 0 ? (
-        <div
-          style={{
-            background: 'var(--surface)',
-            border: '1.5px dashed var(--border)',
-            borderRadius: 2,
-            padding: isMobile ? '32px 16px' : '52px 24px',
-            textAlign: 'center',
-            color: 'var(--muted)',
-            fontFamily: 'var(--font-display)',
-            fontSize: 24,
-            lineHeight: 1.8,
-          }}
-        >
-          <div style={{ color: 'var(--fg)', marginBottom: 4 }}>Start with Mission and Vision, then add the rest of your notebook pages.</div>
-          <div style={{ fontSize: 16, color: 'var(--muted)', fontFamily: 'var(--font-body)' }}>
-            Use the template buttons above to create your first note cards.
-          </div>
-        </div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 14,
-            alignItems: 'start',
-          }}
-        >
-          {visibleNotes.map(note => (
-            <NotebookNoteCard
-              key={note.id}
-              note={note}
-              isMobile={isMobile}
-              onSave={updateNote}
-              onDelete={deleteNote}
-              onTogglePin={togglePin}
-            />
-          ))}
+          <button
+            onMouseDown={e => e.preventDefault()}
+            onClick={reset}
+            style={{
+              background: 'none',
+              border: '1.5px solid var(--border)',
+              borderRadius: 2,
+              padding: '5px 14px',
+              fontSize: 15,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            Cancel
+          </button>
         </div>
       )}
     </div>
   )
 }
 
-function StatPill({ label, value }: { label: string; value: number }) {
-  return (
-    <div
-      style={{
-        border: '1px solid var(--border)',
-        borderRadius: 2,
-        padding: '6px 10px',
-        minWidth: 72,
-      }}
-    >
-      <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-        {label}
-      </div>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--fg)', lineHeight: 1 }}>
-        {value}
-      </div>
-    </div>
-  )
-}
+// ─── Plan Item Row ────────────────────────────────────────────────────────────
 
-function NotebookNoteCard({
-  note,
-  isMobile = false,
-  onSave,
+function PlanItemRow({
+  item,
+  onEdit,
   onDelete,
-  onTogglePin,
+  onToggleComplete,
+  isMobile,
 }: {
-  note: NotebookNote
-  isMobile?: boolean
-  onSave: (id: string, patch: Partial<Pick<NotebookNote, 'kind' | 'title' | 'contentHtml' | 'pinned'>>) => Promise<NotebookNote>
+  item: PlanItem
+  onEdit: (id: string, patch: Partial<Pick<PlanItem, 'title' | 'description' | 'dueDate'>>) => Promise<void>
   onDelete: (id: string) => Promise<void>
-  onTogglePin: (id: string, pinned: boolean) => Promise<NotebookNote>
+  onToggleComplete: (id: string, completed: boolean) => Promise<void>
+  isMobile: boolean
 }) {
-  const [title, setTitle] = useState(note.title)
-  const [contentHtml, setContentHtml] = useState(note.contentHtml)
-  const [saveState, setSaveState] = useState<SaveState>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const [focused, setFocused] = useState(false)
-  const editorRef = useRef<HTMLDivElement>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastSavedRef = useRef({ title: note.title, contentHtml: note.contentHtml, pinned: note.pinned, kind: note.kind })
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(item.title)
+  const [editDescription, setEditDescription] = useState(item.description || '')
+  const [editDueDate, setEditDueDate] = useState(item.dueDate || '')
+  const [titleError, setTitleError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const editInputRef = useRef<HTMLInputElement>(null)
+  const lastTapRef = useRef<number>(0)
 
-  useEffect(() => {
-    lastSavedRef.current.pinned = note.pinned
-    lastSavedRef.current.kind = note.kind
-  }, [note.kind, note.pinned])
+  const hasComplete = item.kind === 'vision' || item.kind === 'goals'
+  const hasDateField = item.kind === 'vision' || item.kind === 'goals'
+  const overdue = !item.completed && item.dueDate && isPast(item.dueDate)
 
-  useEffect(() => {
-    if (!editorRef.current || focused) return
-    if (editorRef.current.innerHTML !== contentHtml) {
-      editorRef.current.innerHTML = contentHtml || emptyHtml()
+  const startEdit = () => {
+    setEditTitle(item.title)
+    setEditDescription(item.description || '')
+    setEditDueDate(item.dueDate || '')
+    setTitleError('')
+    setEditing(true)
+    setTimeout(() => editInputRef.current?.focus(), 0)
+  }
+
+  const handleTap = (e: React.TouchEvent) => {
+    const now = Date.now()
+    if (now - lastTapRef.current < 300) {
+      e.preventDefault()
+      if (!item.completed && !editing) startEdit()
     }
-  }, [contentHtml, focused])
+    lastTapRef.current = now
+  }
 
-  const persist = useCallback(async () => {
-    const trimmedTitle = normalizeText(title).trim()
-    if (!trimmedTitle) {
-      setSaveState('error')
-      setError('Title is required before saving.')
-      return
-    }
+  const cancelEdit = () => {
+    setEditing(false)
+    setTitleError('')
+    setActionError(null)
+  }
 
-    const normalizedHtml = sanitizeHtml(contentHtml)
-    setSaveState('saving')
-    setError(null)
-
+  const handleSave = async () => {
+    const trimmed = editTitle.trim()
+    if (!trimmed) { setTitleError('Title is required'); return }
+    if (trimmed.length > TITLE_MAX) { setTitleError(`Max ${TITLE_MAX} characters`); return }
+    if (editDueDate && !DATE_RE.test(editDueDate)) { setTitleError('Invalid date format'); return }
+    setSaving(true)
     try {
-      const updated = await onSave(note.id, {
-        title: trimmedTitle,
-        contentHtml: normalizedHtml,
-      })
-      lastSavedRef.current = {
-        title: updated.title,
-        contentHtml: updated.contentHtml,
-        pinned: updated.pinned,
-        kind: updated.kind,
-      }
-      setTitle(updated.title)
-      setContentHtml(updated.contentHtml)
-      setSaveState('saved')
+      await onEdit(item.id, { title: trimmed, description: editDescription.trim(), dueDate: editDueDate })
+      setEditing(false)
+      setActionError(null)
     } catch (err) {
-      setSaveState('error')
-      setError(err instanceof Error ? err.message : 'Failed to save note')
+      setActionError(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setSaving(false)
     }
-  }, [contentHtml, note.id, onSave, title])
-
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-
-    const trimmedTitle = normalizeText(title).trim()
-    const normalizedHtml = sanitizeHtml(contentHtml)
-    const changed =
-      trimmedTitle !== lastSavedRef.current.title ||
-      normalizedHtml !== lastSavedRef.current.contentHtml ||
-      note.pinned !== lastSavedRef.current.pinned ||
-      note.kind !== lastSavedRef.current.kind
-
-    if (!changed || !trimmedTitle) return
-
-    timerRef.current = setTimeout(() => {
-      void persist()
-    }, AUTOSAVE_DELAY)
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [contentHtml, note.kind, note.pinned, persist, title])
-
-  const flushSave = () => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    void persist()
-  }
-
-  const setEditorHtml = (value: string) => {
-    const cleaned = sanitizeHtml(value)
-    setContentHtml(cleaned)
-    setError(null)
-    if (saveState === 'saved' || saveState === 'error') setSaveState('idle')
-  }
-
-  const exec = (command: string) => {
-    editorRef.current?.focus()
-    document.execCommand(command, false)
-    const nextHtml = sanitizeHtml(editorRef.current?.innerHTML || emptyHtml())
-    setEditorHtml(nextHtml)
   }
 
   const handleDelete = () => {
-    if (!window.confirm('Delete this note?')) return
-    void onDelete(note.id).catch(err => {
-      setError(err instanceof Error ? err.message : 'Failed to delete note')
-    })
+    void onDelete(item.id).catch(err => setActionError(err instanceof Error ? err.message : 'Delete failed'))
   }
 
-  const handlePin = () => {
-    void onTogglePin(note.id, !note.pinned).catch(err => {
-      setError(err instanceof Error ? err.message : 'Failed to update note')
-    })
+  const handleToggle = () => {
+    void onToggleComplete(item.id, !item.completed).catch(err => setActionError(err instanceof Error ? err.message : 'Update failed'))
   }
-
-  const meta = NOTE_META[note.kind]
-  const words = htmlToPlainText(contentHtml).split(/\s+/).filter(Boolean).length
 
   return (
     <div
-      style={{
-        background: 'var(--surface)',
-        border: `1.5px solid ${note.pinned ? meta.accent : 'var(--border)'}`,
-        borderRadius: 2,
-        padding: isMobile ? '14px' : '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        position: 'relative',
-        boxShadow: note.pinned ? '0 2px 0 rgba(0,0,0,0.03)' : 'none',
-      }}
+      style={{ background: editing ? 'rgba(255,255,255,0.5)' : 'transparent' }}
+      onMouseEnter={e => { if (!editing) e.currentTarget.style.background = 'var(--bg)' }}
+      onMouseLeave={e => { if (!editing) e.currentTarget.style.background = 'transparent' }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      {/* Main row */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          minHeight: 34,
+          padding: '6px 6px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        {/* Spacer for drag handle alignment */}
+        <div style={{ width: 18, flexShrink: 0 }} />
+
+        {/* Completion circle */}
+        {hasComplete ? (
+          <button
+            type="button"
+            onClick={handleToggle}
+            aria-label={item.completed ? 'Mark incomplete' : 'Mark complete'}
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: '50%',
+              border: '2px solid #4db86a',
+              background: item.completed ? '#4db86a' : 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.2s',
+              padding: 0,
+            }}
+          >
+            {item.completed && <IconCheck size={14} />}
+          </button>
+        ) : (
+          /* Mission: just a spacer so text aligns with vision/goals */
+          <div style={{ width: 22, flexShrink: 0 }} />
+        )}
+
+        {/* Title — editing or display */}
+        {editing ? (
+          <input
+            ref={editInputRef}
+            autoFocus
+            value={editTitle}
+            onChange={e => { setEditTitle(e.target.value); setTitleError('') }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') void handleSave()
+              if (e.key === 'Escape') cancelEdit()
+            }}
+            maxLength={TITLE_MAX}
+            style={{
+              flex: 1,
+              border: 'none',
+              borderBottom: '2px solid var(--fg)',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: 16,
+              fontFamily: 'var(--font-task)',
+              color: 'var(--fg)',
+            }}
+          />
+        ) : (
+          <span
+            onDoubleClick={() => !item.completed && startEdit()}
+            onTouchEnd={handleTap}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              fontFamily: 'var(--font-task)',
+              fontSize: 16,
+              color: item.completed ? 'var(--muted)' : 'var(--fg)',
+              cursor: item.completed ? 'default' : 'text',
+              wordBreak: 'break-word',
+              transition: 'color 0.2s',
+              textDecorationLine: item.completed ? 'line-through' : 'none',
+              textDecorationColor: 'rgba(107,203,119,0.5)',
+              textDecorationThickness: 2,
+            }}
+          >
+            {item.title}
+          </span>
+        )}
+
+        {/* Due date badge (desktop, not editing, not completed) */}
+        {!editing && !isMobile && item.dueDate && !item.completed && (
           <span
             style={{
-              background: note.pinned ? meta.accent : 'transparent',
-              color: note.pinned ? 'white' : 'var(--muted)',
-              border: `1.5px solid ${meta.accent}`,
-              borderRadius: 999,
-              padding: '4px 9px',
               fontSize: 12,
               fontFamily: 'var(--font-mono)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              color: overdue ? '#a23d52' : 'var(--muted)',
+              background: overdue ? 'rgba(239,71,111,0.07)' : 'transparent',
+              border: `1px solid ${overdue ? 'rgba(239,71,111,0.2)' : 'var(--border)'}`,
+              borderRadius: 999,
+              padding: '1px 8px',
+              flexShrink: 0,
+              letterSpacing: '0.03em',
             }}
           >
-            {meta.label}
+            {overdue ? '⚠ ' : ''}{formatDate(item.dueDate)}
           </span>
-          <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-            {saveState === 'saving' && 'Saving...'}
-            {saveState === 'saved' && formatSavedAt(note.updatedAt)}
-            {saveState === 'idle' && ' '}
-            {saveState === 'error' && 'Needs attention'}
-          </span>
-        </div>
+        )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button
-            onClick={handlePin}
-            title={note.pinned ? 'Unpin note' : 'Pin note'}
+        {/* Completed-at badge (desktop, not editing) */}
+        {!editing && !isMobile && item.completed && item.completedAt && (
+          <span
             style={{
-              background: note.pinned ? meta.accent : 'transparent',
-              color: note.pinned ? 'white' : 'var(--muted)',
-              border: `1px solid ${meta.accent}`,
-              borderRadius: 2,
-              padding: '5px 8px',
-              cursor: 'pointer',
-              fontSize: 13,
-              lineHeight: 1,
+              fontSize: 12,
+              fontFamily: 'var(--font-mono)',
+              color: '#3a9163',
+              background: 'rgba(107,203,119,0.08)',
+              border: '1px solid rgba(107,203,119,0.25)',
+              borderRadius: 999,
+              padding: '1px 8px',
+              flexShrink: 0,
+              letterSpacing: '0.03em',
             }}
           >
-            {note.pinned ? 'Pinned' : 'Pin'}
-          </button>
+            ✓ {formatCompletedAt(item.completedAt)}
+          </span>
+        )}
+
+        {/* Delete button */}
+        {!editing && (
           <button
             onClick={handleDelete}
-            title="Delete note"
+            aria-label="Delete"
+            title="Delete"
             style={{
-              background: 'transparent',
-              color: 'var(--muted)',
-              border: '1px solid var(--border)',
-              borderRadius: 2,
-              padding: '5px 8px',
+              background: 'none',
+              border: 'none',
               cursor: 'pointer',
-              fontSize: 13,
+              color: 'var(--border)',
+              fontSize: 14,
+              flexShrink: 0,
               lineHeight: 1,
+              padding: '0 4px',
+              transition: 'color 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#ef476f')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--border)')}
+          >
+            <IconClose size={10} />
+          </button>
+        )}
+      </div>
+
+      {/* Edit metadata row */}
+      {editing && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: isMobile ? '6px 10px' : '6px 50px',
+            flexWrap: 'wrap',
+            borderBottom: '1px solid var(--border)',
+            background: 'rgba(255,255,255,0.5)',
+          }}
+        >
+          <input
+            type="text"
+            value={editDescription}
+            onChange={e => setEditDescription(e.target.value)}
+            placeholder="Description (optional)..."
+            maxLength={DESCRIPTION_MAX}
+            style={{
+              flex: '1 1 160px',
+              border: 'none',
+              borderBottom: '1.5px dashed var(--border)',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: 14,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--muted)',
+              padding: '2px 4px',
+            }}
+          />
+
+          {hasDateField && (
+            <input
+              type="date"
+              value={editDueDate}
+              onChange={e => setEditDueDate(e.target.value)}
+              style={{
+                border: 'none',
+                borderBottom: '1.5px dashed var(--border)',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 14,
+                fontFamily: 'var(--font-body)',
+                color: 'var(--muted)',
+                padding: '2px 4px',
+                cursor: 'pointer',
+              }}
+            />
+          )}
+
+          {(titleError || actionError) && (
+            <span style={{ fontSize: 12, color: '#a23d52' }}>{titleError || actionError}</span>
+          )}
+
+          <button
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => void handleSave()}
+            disabled={saving || !editTitle.trim()}
+            style={{
+              marginLeft: 'auto',
+              background: 'var(--fg)',
+              color: 'var(--surface)',
+              border: 'none',
+              borderRadius: 2,
+              padding: '6px 20px',
+              fontSize: 15,
+              fontFamily: 'var(--font-body)',
+              cursor: editTitle.trim() && !saving ? 'pointer' : 'not-allowed',
+              flexShrink: 0,
+              opacity: editTitle.trim() && !saving ? 1 : 0.4,
             }}
           >
-            Delete
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            onMouseDown={e => e.preventDefault()}
+            onClick={cancelEdit}
+            style={{
+              background: 'none',
+              border: '1.5px solid var(--border)',
+              borderRadius: 2,
+              padding: '5px 14px',
+              fontSize: 15,
+              fontFamily: 'var(--font-body)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            Cancel
           </button>
         </div>
-      </div>
+      )}
 
-      <input
-        value={title}
-        onChange={e => {
-          setTitle(e.target.value)
-          setError(null)
-          if (saveState === 'error') setSaveState('idle')
-        }}
-        onBlur={flushSave}
-        maxLength={TITLE_MAX}
-        placeholder={meta.title}
-        style={{
-          width: '100%',
-          border: 'none',
-          borderBottom: '1.5px dashed var(--border)',
-          outline: 'none',
-          background: 'transparent',
-          fontFamily: 'var(--font-display)',
-          fontSize: 24,
-          lineHeight: 1.15,
-          color: 'var(--fg)',
-          padding: '2px 0 6px',
-        }}
-      />
-
-      <RichTextField
-        editorRef={editorRef}
-        value={contentHtml}
-        placeholder={meta.placeholder}
-        onChange={setEditorHtml}
-        onBlur={flushSave}
-        onFocus={() => setFocused(true)}
-        onFocusLost={() => setFocused(false)}
-        onToolbarAction={exec}
-      />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-          {words} word{words === 1 ? '' : 's'}
+      {/* Description sub-row (when not editing) */}
+      {!editing && item.description && (
+        <div
+          style={{
+            padding: isMobile ? '2px 6px 7px 56px' : '2px 44px 7px 56px',
+            borderBottom: '1px solid var(--border)',
+            fontSize: 13,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--muted)',
+            lineHeight: 1.5,
+          }}
+        >
+          {item.description}
         </div>
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-          {saveState === 'error' ? error : note.pinned ? 'Pinned to the top' : 'Autosaves while you write'}
-        </div>
-      </div>
+      )}
 
-      {error && saveState === 'error' && (
-        <div style={{ color: '#a23d52', fontSize: 13, lineHeight: 1.5 }}>
-          {error}
+      {/* Mobile badges row */}
+      {!editing && isMobile && (item.dueDate || item.completedAt) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '3px 6px 7px 56px', borderBottom: '1px solid var(--border)' }}>
+          {item.dueDate && !item.completed && (
+            <span
+              style={{
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                color: overdue ? '#a23d52' : 'var(--muted)',
+                background: overdue ? 'rgba(239,71,111,0.07)' : 'transparent',
+                border: `1px solid ${overdue ? 'rgba(239,71,111,0.2)' : 'var(--border)'}`,
+                borderRadius: 999,
+                padding: '1px 8px',
+                letterSpacing: '0.03em',
+              }}
+            >
+              {overdue ? '⚠ ' : ''}{formatDate(item.dueDate)}
+            </span>
+          )}
+          {item.completed && item.completedAt && (
+            <span
+              style={{
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                color: '#3a9163',
+                background: 'rgba(107,203,119,0.08)',
+                border: '1px solid rgba(107,203,119,0.25)',
+                borderRadius: 999,
+                padding: '1px 8px',
+                letterSpacing: '0.03em',
+              }}
+            >
+              ✓ {formatCompletedAt(item.completedAt)}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Action error (delete/toggle failures) — always visible */}
+      {actionError && !editing && (
+        <div
+          style={{
+            padding: '3px 6px 6px 56px',
+            borderBottom: '1px solid var(--border)',
+            fontSize: 12,
+            color: '#a23d52',
+          }}
+        >
+          {actionError}
         </div>
       )}
     </div>
   )
 }
 
-type RichTextFieldProps = {
-  editorRef: RefObject<HTMLDivElement | null>
-  value: string
-  placeholder: string
-  onChange: (value: string) => void
-  onBlur: () => void
-  onFocus: () => void
-  onFocusLost: () => void
-  onToolbarAction: (command: string) => void
-}
+// ─── Plan Section ─────────────────────────────────────────────────────────────
 
-const RichTextField = (() => {
-  return function RichTextField({
-    editorRef,
-    value,
-    placeholder,
-    onChange,
-    onBlur,
-    onFocus,
-    onFocusLost,
-    onToolbarAction,
-  }: RichTextFieldProps) {
-    const [active, setActive] = useState(false)
+function PlanSection({
+  kind,
+  items,
+  onAdd,
+  onEdit,
+  onDelete,
+  onToggleComplete,
+  isMobile,
+}: {
+  kind: PlanKind
+  items: PlanItem[]
+  onAdd: (item: Omit<PlanItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
+  onEdit: (id: string, patch: Partial<Pick<PlanItem, 'title' | 'description' | 'dueDate'>>) => Promise<void>
+  onDelete: (id: string) => Promise<void>
+  onToggleComplete: (id: string, completed: boolean) => Promise<void>
+  isMobile: boolean
+}) {
+  const meta = SECTION_META[kind]
+  const completedCount = items.filter(i => i.completed).length
 
-    useEffect(() => {
-      if (!editorRef.current || active) return
-      const next = value || emptyHtml()
-      if (editorRef.current.innerHTML !== next) {
-        editorRef.current.innerHTML = next
-      }
-    }, [active, editorRef, value])
-
-    const handleInput = () => {
-      const raw = editorRef.current?.innerHTML || emptyHtml()
-      onChange(sanitizeHtml(raw))
-    }
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div
+  return (
+    <div>
+      {/* Group header — identical to task list group header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '12px 6px 4px',
+          borderBottom: '1.5px solid var(--border)',
+          marginBottom: 2,
+        }}
+      >
+        <IconFolder size={18} color="var(--fg)" />
+        <span
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 6,
+            fontFamily: 'var(--font-task)',
+            fontSize: 16,
+            fontWeight: 'bold',
+            color: 'var(--fg)',
           }}
         >
-          {[
-            ['bold', 'B'],
-            ['italic', 'I'],
-            ['insertUnorderedList', '• List'],
-            ['insertOrderedList', '1. List'],
-            ['removeFormat', 'Clear'],
-          ].map(([command, label]) => (
-            <button
-              key={command}
-              type="button"
-              onMouseDown={e => {
-                e.preventDefault()
-                onToolbarAction(command)
-              }}
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                borderRadius: 999,
-                padding: '4px 10px',
-                fontSize: 12,
-                color: 'var(--muted)',
-                cursor: 'pointer',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          {meta.label}
+        </span>
+        {items.length > 0 && (
+          <span style={{ fontSize: 14, color: 'var(--muted)', marginLeft: 2 }}>
+            ({items.length}{kind !== 'mission' && completedCount > 0 ? ` · ${completedCount} done` : ''})
+          </span>
+        )}
+      </div>
 
-        <div style={{ position: 'relative' }}>
-          {isEmptyHtml(value) && !active && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: '12px 12px auto 12px',
-                color: 'var(--border)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 15,
-                lineHeight: 1.65,
-                pointerEvents: 'none',
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {placeholder}
-            </div>
-          )}
-          <div
-            ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleInput}
-            onFocus={() => {
-              setActive(true)
-              onFocus()
-            }}
-            onBlur={() => {
-              setActive(false)
-              onFocusLost()
-              onBlur()
-            }}
-            onPaste={e => {
-              e.preventDefault()
-              const text = e.clipboardData.getData('text/plain')
-              document.execCommand('insertText', false, text)
-              handleInput()
-            }}
-            style={{
-              minHeight: 200,
-              border: '1.5px solid var(--border)',
-              borderRadius: 2,
-              background: 'linear-gradient(180deg, oklch(99% 0.01 80), oklch(98% 0.01 80))',
-              color: 'var(--fg)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 16,
-              lineHeight: 1.75,
-              padding: '12px 12px',
-              outline: 'none',
-              whiteSpace: 'pre-wrap',
-              overflowWrap: 'anywhere',
-            }}
-          />
+      {/* Item rows */}
+      {items.map(item => (
+        <PlanItemRow
+          key={item.id}
+          item={item}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggleComplete={onToggleComplete}
+          isMobile={isMobile}
+        />
+      ))}
+
+      {/* Inline add row — at bottom of each section */}
+      <InlineAddRow kind={kind} onAdd={onAdd} isMobile={isMobile} />
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function MyPlanSection({ authedFetch, isMobile = false }: MyPlanSectionProps) {
+  const [items, setItems] = useState<PlanItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const loadItems = useCallback(async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const res = await authedFetch('/api/my-plan/notes')
+      const data = await res.json() as PlanItemResponse[] | { error?: string }
+      if (!res.ok) {
+        const err = data as { error?: string }
+        throw new Error(err.error ?? 'Failed to load your plan')
+      }
+      const raw = Array.isArray(data) ? data : []
+      const loaded: PlanItem[] = raw
+        .filter((d): d is PlanItemResponse => Boolean(d && typeof d === 'object'))
+        .filter(d => d.kind === 'mission' || d.kind === 'vision' || d.kind === 'goals')
+        .map(d => ({
+          id: typeof d.id === 'string' ? d.id : crypto.randomUUID(),
+          kind: d.kind as PlanKind,
+          title: typeof d.title === 'string' ? d.title : '',
+          description: typeof d.description === 'string' ? d.description : '',
+          dueDate: typeof d.dueDate === 'string' ? d.dueDate : '',
+          completed: Boolean(d.completed),
+          completedAt: typeof d.completedAt === 'number' ? d.completedAt : null,
+          createdAt: typeof d.createdAt === 'number' ? d.createdAt : Date.now(),
+          updatedAt: typeof d.updatedAt === 'number' ? d.updatedAt : Date.now(),
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt)
+      setItems(loaded)
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load your plan')
+    } finally {
+      setLoading(false)
+    }
+  }, [authedFetch])
+
+  useEffect(() => {
+    void (async () => { await loadItems() })()
+  }, [loadItems])
+
+  const addItem = useCallback(async (payload: Omit<PlanItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const res = await authedFetch('/api/my-plan/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: payload.kind,
+        title: payload.title,
+        description: payload.description,
+        dueDate: payload.dueDate,
+        completed: payload.completed,
+        completedAt: payload.completedAt,
+        contentHtml: '<p><br></p>',
+        pinned: false,
+      }),
+    })
+    const data = await res.json() as PlanItemResponse
+    if (!res.ok) throw new Error(data.error ?? 'Failed to add')
+    const created: PlanItem = {
+      id: typeof data.id === 'string' ? data.id : crypto.randomUUID(),
+      kind: payload.kind,
+      title: typeof data.title === 'string' ? data.title : payload.title,
+      description: typeof data.description === 'string' ? data.description : payload.description,
+      dueDate: typeof data.dueDate === 'string' ? data.dueDate : payload.dueDate,
+      completed: Boolean(data.completed),
+      completedAt: typeof data.completedAt === 'number' ? data.completedAt : null,
+      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+      updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
+    }
+    setItems(prev => [created, ...prev])
+  }, [authedFetch])
+
+  const editItem = useCallback(async (id: string, patch: Partial<Pick<PlanItem, 'title' | 'description' | 'dueDate'>>) => {
+    const res = await authedFetch(`/api/my-plan/notes/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    const data = await res.json() as PlanItemResponse
+    if (!res.ok) throw new Error(data.error ?? 'Failed to save')
+    setItems(prev => prev.map(item =>
+      item.id === id
+        ? {
+            ...item,
+            title: typeof data.title === 'string' ? data.title : item.title,
+            description: typeof data.description === 'string' ? data.description : item.description,
+            dueDate: typeof data.dueDate === 'string' ? data.dueDate : item.dueDate,
+            updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
+          }
+        : item
+    ))
+  }, [authedFetch])
+
+  const deleteItem = useCallback(async (id: string) => {
+    const res = await authedFetch(`/api/my-plan/notes/${id}`, { method: 'DELETE' })
+    const data = await res.json() as { error?: string }
+    if (!res.ok) throw new Error(data.error ?? 'Failed to delete')
+    setItems(prev => prev.filter(item => item.id !== id))
+  }, [authedFetch])
+
+  const toggleComplete = useCallback(async (id: string, completed: boolean) => {
+    const res = await authedFetch(`/api/my-plan/notes/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed }),
+    })
+    const data = await res.json() as PlanItemResponse
+    if (!res.ok) throw new Error(data.error ?? 'Failed to update')
+    setItems(prev => prev.map(item =>
+      item.id === id
+        ? {
+            ...item,
+            completed: Boolean(data.completed),
+            completedAt: typeof data.completedAt === 'number' ? data.completedAt : null,
+            updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
+          }
+        : item
+    ))
+  }, [authedFetch])
+
+  const missions = items.filter(i => i.kind === 'mission')
+  const visions = items.filter(i => i.kind === 'vision')
+  const goals = items.filter(i => i.kind === 'goals')
+
+  const contentStyle: CSSProperties = {
+    flex: 1,
+    overflowY: 'auto',
+    padding: isMobile ? '16px 12px 32px' : '20px 32px 32px 28px',
+    background: 'var(--bg)',
+  }
+
+  if (loading) {
+    return (
+      <div style={contentStyle}>
+        <div style={{ color: 'var(--muted)', fontFamily: 'var(--font-display)', fontSize: 20, padding: '40px 0' }}>
+          Opening your plan...
         </div>
       </div>
     )
   }
-})()
+
+  if (loadError) {
+    return (
+      <div style={contentStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', color: '#a23d52', fontSize: 14, padding: '8px 0' }}>
+          <span>{loadError}</span>
+          <button
+            onClick={() => void (async () => { await loadItems() })()}
+            style={{ background: 'transparent', border: '1px solid rgba(162,61,82,0.35)', borderRadius: 2, padding: '5px 12px', fontSize: 13, color: '#a23d52', cursor: 'pointer' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={contentStyle}>
+      <PlanSection kind="mission" items={missions} onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onToggleComplete={toggleComplete} isMobile={isMobile} />
+      <PlanSection kind="vision"  items={visions}  onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onToggleComplete={toggleComplete} isMobile={isMobile} />
+      <PlanSection kind="goals"   items={goals}    onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onToggleComplete={toggleComplete} isMobile={isMobile} />
+    </div>
+  )
+}

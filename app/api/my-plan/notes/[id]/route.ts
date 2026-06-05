@@ -8,6 +8,8 @@ type NoteKind = (typeof NOTE_KINDS)[number]
 
 const TITLE_MAX = 120
 const CONTENT_MAX = 12000
+const DESCRIPTION_MAX = 500
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 function normalize(value: unknown): string {
   return typeof value === 'string' ? value.replace(/\r\n/g, '\n').trim() : ''
@@ -67,6 +69,30 @@ export async function PATCH(
 
     if ('pinned' in body) {
       patch.pinned = Boolean(body.pinned)
+    }
+
+    if ('description' in body) {
+      const description = normalize(body.description)
+      if (description.length > DESCRIPTION_MAX) {
+        return NextResponse.json({ error: `Description must be ${DESCRIPTION_MAX} characters or fewer.` }, { status: 400 })
+      }
+      patch.description = description
+    }
+
+    if ('dueDate' in body) {
+      const rawDueDate = body.dueDate
+      if (rawDueDate !== '' && (typeof rawDueDate !== 'string' || !DATE_RE.test(rawDueDate))) {
+        return NextResponse.json({ error: 'dueDate must be a YYYY-MM-DD string or empty.' }, { status: 400 })
+      }
+      patch.dueDate = typeof rawDueDate === 'string' && DATE_RE.test(rawDueDate) ? rawDueDate : ''
+    }
+
+    if ('completed' in body) {
+      if (typeof body.completed !== 'boolean') {
+        return NextResponse.json({ error: 'completed must be a boolean.' }, { status: 400 })
+      }
+      patch.completed = body.completed
+      patch.completedAt = body.completed ? Date.now() : null
     }
 
     await docRef.update(patch)

@@ -8,6 +8,8 @@ type NoteKind = (typeof NOTE_KINDS)[number]
 
 const TITLE_MAX = 120
 const CONTENT_MAX = 12000
+const DESCRIPTION_MAX = 500
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 type NoteDoc = {
   id: string
@@ -77,6 +79,17 @@ export async function POST(req: Request) {
     const title = normalize(body.title) || defaultTitle(kind)
     const contentHtml = sanitizeNotebookHtml(body.contentHtml)
     const pinned = typeof body.pinned === 'boolean' ? body.pinned : kind === 'mission' || kind === 'vision'
+    const description = normalize(body.description)
+    if (description.length > DESCRIPTION_MAX) {
+      return NextResponse.json({ error: `Description must be ${DESCRIPTION_MAX} characters or fewer.` }, { status: 400 })
+    }
+    const rawDueDate = body.dueDate
+    if (rawDueDate !== undefined && rawDueDate !== '' && (typeof rawDueDate !== 'string' || !DATE_RE.test(rawDueDate))) {
+      return NextResponse.json({ error: 'dueDate must be a YYYY-MM-DD string or empty.' }, { status: 400 })
+    }
+    const dueDate = typeof rawDueDate === 'string' && DATE_RE.test(rawDueDate) ? rawDueDate : ''
+    const completed = typeof body.completed === 'boolean' ? body.completed : false
+    const completedAt = completed ? Date.now() : null
 
     if (title.length > TITLE_MAX) {
       return NextResponse.json({ error: `Title must be ${TITLE_MAX} characters or fewer.` }, { status: 400 })
@@ -93,6 +106,10 @@ export async function POST(req: Request) {
       title,
       contentHtml,
       pinned,
+      description,
+      dueDate,
+      completed,
+      completedAt,
       createdAt: now,
       updatedAt: now,
     })
@@ -104,6 +121,10 @@ export async function POST(req: Request) {
       title,
       contentHtml,
       pinned,
+      description,
+      dueDate,
+      completed,
+      completedAt,
       createdAt: now,
       updatedAt: now,
     })
